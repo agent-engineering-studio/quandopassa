@@ -89,3 +89,59 @@ def test_luoghi_senza_geocoder_restituisce_le_fermate(client):
     r = client.get("/api/v1/luoghi", params={"q": "plebiscito"}).json()
     assert r[0]["tipo"] == "fermata" and r[0]["id"] == "R02"
     assert client.get("/api/v1/luoghi", params={"q": "x"}).status_code == 422
+
+
+def _compra(client, tipo):
+    a = client.post("/api/v1/biglietti/acquisti", json={"tipo": tipo}).json()
+    assert client.post(f"/api/v1/biglietti/acquisti/{a['acquisto_id']}/pagamento-simulato",
+                       json={"chiave": a["chiave"], "pagato": True}).status_code == 200
+    t = client.post(f"/api/v1/biglietti/acquisti/{a['acquisto_id']}/conferma", json={"chiave": a["chiave"]}).json()
+    return a, t
+
+
+def test_tariffe_dal_env(cfg, ia):
+    from dataclasses import replace
+    from fastapi.testclient import TestClient
+    from quandopassa.main import create_app
+    c = TestClient(create_app(replace(cfg, tariffa_corsa="1,30", corse_carnet=5), ia))
+    tariffe = {t["tipo"]: t for t in c.get("/api/v1/biglietti").json()["tariffe"]}
+    assert tariffe["corsa"]["importo_cent"] == 130 and tariffe["carnet"]["corse"] == 5
+    assert "1,30" in c.get("/api/v1/assistente", params={"testo": "quanto costa il biglietto?"}).json()["risposta"]
+    spenta = TestClient(create_app(replace(cfg, biglietti_attivi=False), ia))
+    assert spenta.get("/api/v1/info").json()["biglietti"] == {"attivi": False}
+    assert spenta.post("/api/v1/biglietti/acquisti", json={"tipo": "corsa"}).status_code == 404
+
+
+def test_carnet_attivazione_e_verifica(client):
+    a, t = _compra(client, "carnet")
+    assert t["stato"] == "pronto" and t["corse_rimaste"] == 10
+    # conferma idempotente, chiave obbligatoria
+    assert client.post(f"/api/v1/biglietti/acquisti/{a['acquisto_id']}/conferma", json={"chiave": a["chiave"]}).json()["id"] == t["id"]
+    assert client.post(f"/api/v1/biglietti/titoli/{t['id']}/attiva", json={"chiave": "x" * 20}).status_code == 404
+    att = client.post(f"/api/v1/biglietti/titoli/{t['id']}/attiva", json={"chiave": a["chiave"]}).json()
+    assert att["stato"] == "attivo" and att["corse_rimaste"] == 9 and att["attivazione"]["qr_img"].startswith("data:image/svg+xml;base64,")
+    # riattivare mentre è valido non consuma un'altra corsa
+    assert client.post(f"/api/v1/biglietti/titoli/{t['id']}/attiva", json={"chiave": a["chiave"]}).json()["corse_rimaste"] == 9
+    # portafoglio dalle chiavi del dispositivo
+    assert [x["id"] for x in client.post("/api/v1/biglietti/portafoglio", json={"chiavi": [a["chiave"]]}).json()] == [t["id"]]
+    # verifica del controllore: QR, codice, contraffazione, credenziali
+    auth = ("controllore", "verifica-segreta")
+    qr, codice = att["attivazione"]["qr"], att["attivazione"]["codice"]
+    assert client.post("/api/v1/biglietti/verifica", json={"codice": qr}).status_code == 401
+    assert client.post("/api/v1/biglietti/verifica", json={"codice": qr}, auth=auth).json()["esito"] == "valido"
+    assert client.post("/api/v1/biglietti/verifica", json={"codice": codice.lower()}, auth=auth).json()["esito"] == "valido"
+    falso = qr[:-4] + "0000"
+    assert client.post("/api/v1/biglietti/verifica", json={"codice": falso}, auth=auth).json()["esito"] == "non_valido"
+
+
+def test_acquisto_non_pagato_non_emette(client):
+    a = client.post("/api/v1/biglietti/acquisti", json={"tipo": "corsa"}).json()
+    assert client.post(f"/api/v1/biglietti/acquisti/{a['acquisto_id']}/conferma",
+                       json={"chiave": a["chiave"]}).status_code == 409
+
+
+def test_pagamento_annullato_non_emette(client):
+    a = client.post("/api/v1/biglietti/acquisti", json={"tipo": "corsa"}).json()
+    client.post(f"/api/v1/biglietti/acquisti/{a['acquisto_id']}/pagamento-simulato", json={"chiave": a["chiave"], "pagato": False})
+    r = client.post(f"/api/v1/biglietti/acquisti/{a['acquisto_id']}/conferma", json={"chiave": a["chiave"]})
+    assert r.status_code == 409 and "annullato" in r.json()["errore"]

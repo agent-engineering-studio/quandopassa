@@ -73,4 +73,5 @@ reale. L'orologio parte dall'avvio del container: `docker compose restart demo` 
   consente un uso intensivo (`MAPPA_TILES`).
 - Tenere `INFERENCE_BACKEND=rules` finché non è stata fatta la valutazione prevista dalle Linee guida AgID per
   un LLM. Vedi [Intelligenza artificiale](intelligenza-artificiale.md).
-- Non ci sono database né segreti applicativi da proteggere: l'app non salva dati delle persone.
+- Proteggere `BIGLIETTI_SEGRETO` e le credenziali del controllore, e includere il volume Docker `biglietti`
+  (archivio SQLite dei titoli, anonimo) nei backup.

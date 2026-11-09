@@ -8,16 +8,22 @@ Controlli da eseguire a ogni rilascio:
 - `pip-audit -r api/requirements.txt -r inference/requirements.txt -r mcp_server/requirements.txt`
   (vulnerabilità note nelle dipendenze Python): nessuna al 9/11/2026.
 - `npm audit --omit=dev` in `web/` (dipendenze dell'interfaccia): nessuna al 9/11/2026.
-- `bandit -r api/quandopassa inference mcp_server scripts` (analisi statica): restano tre segnalazioni LOW
+- `bandit -r api/quandopassa inference mcp_server scripts` (analisi statica): la query del portafoglio
+  (`IN (?,?,…)`) è segnata `nosec B608` perché compone solo segnaposti, con i valori passati come parametri;
+  restano tre segnalazioni LOW
   (B404, B603, B607) su `scripts/registra_demo.py`, che chiama `ffmpeg` con argomenti fissi. È uno strumento di
   sviluppo per i video, non gira in esercizio: falsi positivi.
-- Audit di accessibilità axe-core (WCAG 2 A/AA, 2.1 A/AA) su mappa, fermate vicine, fermata, assistente,
-  servizio e ricerca, da desktop e da telefono: 0 violazioni al 9/11/2026.
-- Suite `pytest`, che copre anche l'oscuramento di posizione e domande nei log di accesso.
+- Audit di accessibilità axe-core (WCAG 2 A/AA, 2.1 A/AA) con `make accessibilita`: mappa, fermate vicine,
+  fermata, assistente, ricerca, come arrivo, biglietti (pagamento simulato e biglietto attivo) e pagina di
+  verifica, da desktop e da telefono: 0 violazioni al 9/11/2026.
+- Suite `pytest`, che copre anche l'oscuramento di posizione e domande nei log di accesso, la firma dei QR dei
+  biglietti (contraffazione respinta), le scadenze e l'emissione solo a pagamento riuscito.
 
 Scelte di progetto rilevanti per la sicurezza:
 
-- nessun database, nessun account, nessun segreto applicativo: non ci sono credenziali da proteggere nell'app;
+- nessun account; l'unico archivio è quello dei biglietti (SQLite, anonimo: impronte delle chiavi, non chiavi);
+  i segreti sono `BIGLIETTI_SEGRETO` (firma HMAC dei QR) e le credenziali del controllore;
+- il QR dei biglietti arriva al browser come immagine (`data:` URI in `<img>`), mai inserito come HTML;
 - container non-root; il server di inferenza non è esposto fuori dalla rete di Compose; il server MCP ascolta
   solo su `127.0.0.1` con protezione da DNS rebinding ed è in sola lettura;
 - i log di accesso non contengono coordinate né il testo delle domande all'assistente;

@@ -18,8 +18,10 @@ services:
     environment:
       GTFS_DIR: /srv/gtfs
       INFERENCE_URL: http://inference:8080
+      BIGLIETTI_DB: /srv/dati/biglietti.sqlite3
     volumes:
       - ${GTFS_DIR:-./data}:/srv/gtfs:ro
+      - biglietti:/srv/dati
     depends_on:
       inference:
         condition: service_healthy
@@ -37,6 +39,8 @@ services:
       GTFS_DIR: /srv/gtfs
       INFERENCE_URL: http://inference:8080
       DEMO_ORA: ${DEMO_ORA_ISTANZA_DEMO:-2026-11-11T09:00:00}
+      BIGLIETTI_DB: ":memory:"            # la demo riparte pulita a ogni riavvio
+      PAGAMENTI: simulato
     volumes:
       - ${GTFS_DIR:-./data}:/srv/gtfs:ro
     depends_on:
@@ -92,3 +96,4 @@ services:
 
 volumes:
   modelli:
+  biglietti:   # archivio dei biglietti (SQLite): includerlo nei backup

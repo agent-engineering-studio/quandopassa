@@ -15,6 +15,16 @@ from .gtfs import Orario
 log = logging.getLogger("quandopassa.ai")
 
 
+def _testo_biglietti(cfg: Config) -> str:
+    if not cfg.biglietti_attivi:
+        return cfg.biglietti
+    from .biglietti import tariffe  # import qui: la biglietteria è facoltativa
+    euro = lambda c: f"{c / 100:.2f}".replace(".", ",") + " €"  # noqa: E731
+    voci = "; ".join(f"{t.nome} {euro(t.importo_cent)} ({t.descrizione().lower()})" for t in tariffe(cfg).values())
+    return (f"Tariffe: {voci}. Si comprano nella scheda Biglietti dell'app, senza registrazione: il biglietto resta "
+            f"sul telefono e si attiva quando sali, mostrando codice e QR all'autista. {cfg.biglietti}")
+
+
 def base_conoscenza(cfg: Config, orario: Orario) -> list[dict]:
     info = orario.info()
     linee = ", ".join(f"{l['nome']} ({l['nome_esteso']})" for l in info["linee"])
@@ -22,8 +32,8 @@ def base_conoscenza(cfg: Config, orario: Orario) -> list[dict]:
         {"id": "tempo_reale", "titolo": "Posizione bus tempo reale GPS mappa dove si trova affidabile ritardo",
          "testo": "La posizione dei bus sulla mappa è stimata dall'orario ufficiale (GTFS): non c'è un GPS a bordo. "
                   "Se il bus è in ritardo la mappa non lo sa; per questo l'app mostra sempre l'orario programmato."},
-        {"id": "biglietti", "titolo": "Biglietto costo prezzo tariffa abbonamento dove comprare quanto costa",
-         "testo": cfg.biglietti},
+        {"id": "biglietti", "titolo": "Biglietto costo prezzo tariffa abbonamento carnet dove comprare quanto costa",
+         "testo": _testo_biglietti(cfg)},
         {"id": "linee", "titolo": "Linee circolari percorso quali bus servizio urbano",
          "testo": f"Il servizio urbano ha {len(info['linee'])} linee: {linee}. Sono circolari: partono e tornano "
                   "allo stesso capolinea. Tocca una linea sulla mappa per vederne il percorso."},

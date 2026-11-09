@@ -399,6 +399,35 @@ def screenshot() -> None:
         page.wait_for_timeout(800)
         page.screenshot(path=cartella / "07_mobile_fermata.png")
         ctx.close()
+
+        # biglietti: carnet acquistato con il pagamento simulato, corsa attivata, verifica del controllore
+        ctx = browser.new_context(viewport={"width": 390, "height": 844}, device_scale_factor=2, is_mobile=True,
+                                  has_touch=True, locale="it-IT", timezone_id="Europe/Rome")
+        page = ctx.new_page()
+        apri(page)
+        page.locator("#scheda-servizio").click()
+        page.locator("button[aria-label^='Acquista Carnet']").click()
+        page.locator(".pagopa-simulato button:has-text('Paga')").click()
+        page.locator("button:has-text('Attiva una corsa')").click()
+        page.locator("button:has-text('Attiva adesso')").click()
+        page.wait_for_selector(".biglietto-attivo")
+        page.wait_for_timeout(6500)  # la notifica di emissione sparisce
+        page.locator(".biglietto-attivo").scroll_into_view_if_needed()
+        page.screenshot(path=cartella / "09_biglietto.png")
+        codice = page.locator(".biglietto-codice").inner_text().replace(" ", "")
+        env = dict(r.strip().split("=", 1) for r in (RADICE / ".env").read_text().splitlines()
+                   if "=" in r and not r.startswith("#"))
+        if env.get("VERIFICA_PASSWORD"):
+            v = ctx.new_page()
+            v.goto(BASE + "/verifica")
+            v.fill("#utente", env["VERIFICA_USER"])
+            v.fill("#password", env["VERIFICA_PASSWORD"])
+            v.click("button:has-text('Entra')")
+            v.fill("#codice", codice)
+            v.click("button:has-text('Verifica')")
+            v.wait_for_selector(".esito-verifica")
+            v.screenshot(path=cartella / "10_verifica.png")
+        ctx.close()
         browser.close()
     print(f"screenshot in {cartella}")
 

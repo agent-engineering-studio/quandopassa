@@ -16,13 +16,20 @@ Audit automatico axe-core (WCAG 2 A/AA, 2.1 A/AA) su tutte le schede, desktop e 
 Serve comunque un test con utenti e la dichiarazione di accessibilità su form.agid.gov.it.
 
 ## Protezione dati – GDPR
-Nessun account, nessun database, nessun cookie. La posizione del telefono si usa solo se la persona la attiva:
+Nessun account e nessun cookie; l'unico archivio è quello anonimo dei biglietti. La posizione del telefono si usa solo se la persona la attiva:
 le fermate vicine sono calcolate dal server per quella richiesta e le coordinate **non vengono salvate né scritte
 nei log** (filtro sui log di accesso, verificato dai test); lo stesso vale per il testo delle domande
 all'assistente. Restano nei log di accesso l'indirizzo IP e il percorso richiesto: conservazione da definire con
 il RPD. Per "come arrivo" la ricerca di indirizzi e luoghi passa dal server, che invia al geocoder (`LUOGHI_GEOCODER`)
 solo il testo cercato, mai la posizione; anche queste ricerche sono oscurate nei log. Le tile della mappa vengono scaricate dal browser dal fornitore indicato in `MAPPA_TILES`: in esercizio
 scegliere un tile server proprio o un fornitore con accordo ex art. 28.
+
+## Biglietti (prototipo) – pagamenti e dati
+Acquisto anonimo: il server conserva l'impronta della chiave del dispositivo, non dati della persona; i log non
+contengono chiavi né codici. Pagamento simulato nel prototipo; per la vendita reale: pagoPA se vende il Comune
+(CAD art. 5, intermediario MyPay) oppure il prestatore di pagamento del gestore. QR firmati HMAC-SHA256, verifica
+riservata al controllore. Da definire: chi vende secondo il contratto di servizio, trattamento fiscale dei titoli,
+informativa. Vedi [Biglietti](biglietti.md).
 
 ## Intelligenza artificiale – AI Act, L. 132/2025, Linee guida AgID
 Uso a basso rischio (assistente informativo, non decisionale). Trasparenza: l'interfaccia dichiara che è IA

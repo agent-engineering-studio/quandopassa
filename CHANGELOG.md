@@ -5,6 +5,10 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e il v
 ## [Non rilasciato]
 
 ### Aggiunto
+- **Biglietti digitali (prototipo)**: corsa singola, carnet e abbonamento con tariffe nel `.env`; acquisto anonimo
+  con chiave sul dispositivo; adattatore di pagamento intercambiabile (`simulato` funzionante, `pagopa` e `gestore`
+  da completare); attivazione alla salita con colore del giorno, ora che scorre, codice e QR firmato; pagina
+  `/verifica` per il controllore; archivio SQLite sul volume `biglietti`; strumento MCP `tariffe_biglietti`.
 - **Come arrivo**: itinerari porta a porta da fermate, indirizzi, luoghi (OpenStreetMap) o punti sulla mappa,
   con tratti a piedi, bus e un cambio, disegnati sulla mappa; "solo a piedi" quando conviene; "Portami qui" dalla
   scheda della fermata. API `/itinerari` e `/luoghi`; assistente e strumento MCP `come_arrivare` usano lo stesso

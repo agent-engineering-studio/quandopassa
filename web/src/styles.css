@@ -137,3 +137,26 @@ html, body { overflow-x: hidden; }
 .passo-bus .passo-icona { margin-left: -1.55rem; }
 .cambio { color: #7a4b00; font-weight: 600; }
 .pin-arrivo { background: none; border: none; }
+
+/* biglietti */
+.card-titolo { border: 1px solid #c5c7c9; border-radius: 4px; background: #fff; }
+.pagopa-simulato { border: 2px solid #0066cc; border-radius: 4px; background: #f2f7fc; }
+.biglietto-attivo { border-radius: 8px; overflow: hidden; border: 2px solid var(--giorno); background: #fff;
+  box-shadow: 0 4px 16px rgba(0,0,0,.15); }
+.biglietto-testa { position: relative; overflow: hidden; background: var(--giorno); color: #fff; padding: .9rem 1rem;
+  display: flex; flex-direction: column; align-items: center; text-align: center; }
+.biglietto-testa > * { position: relative; }
+/* fasce in movimento: un'immagine ferma (screenshot) si riconosce subito */
+.biglietto-fasce { position: absolute !important; inset: -50%; opacity: .18;
+  background: repeating-linear-gradient(45deg, #fff 0 14px, transparent 14px 28px); animation: fasce 3s linear infinite; }
+@keyframes fasce { to { transform: translateX(39.6px); } }
+@media (prefers-reduced-motion: reduce) { .biglietto-fasce { animation-duration: 12s; } }
+.biglietto-valido { font-size: 2.25rem; letter-spacing: .12em; line-height: 1.1; }
+.biglietto-codice { font-size: 2rem; font-weight: 700; letter-spacing: .15em; color: #17324d; }
+.biglietto-qr { width: 190px; height: 190px; }
+.esito-verifica { border-radius: 6px; padding: 1rem 1.25rem; color: #fff; }
+.esito-verifica-valido { background: #00664a; }
+.esito-verifica-scaduto { background: #a65c00; }
+.esito-verifica-non_valido { background: #a01b2a; }
+.verifica .form-control, .come-arrivo-campi .form-control { border: 1px solid #5c6f82; border-radius: 4px; }
+.verifica .form-control { height: 2.75rem; padding: 0 .75rem; font-size: 1.15rem; }

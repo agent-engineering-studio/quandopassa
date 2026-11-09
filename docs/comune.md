@@ -13,11 +13,12 @@ e l'azienda hanno già, **l'orario**, e lo trasforma in un servizio informativo 
 |---|---|
 | **Nessun hardware** | Niente GPS, SIM o centrale: le posizioni sono stimate dall'orario GTFS lungo il percorso stradale. |
 | **Informazione al cittadino** | Mappa, fermata più vicina, bus in arrivo, "fai in tempo", **come arrivo** con cambi e assistente in italiano, dal telefono. |
-| **Nessun dato personale** | Nessun account e nessun database: la posizione resta sul telefono, l'assistente non riceve dati personali. |
+| **Nessun dato personale** | Nessun account: la posizione non viene salvata, i biglietti sono anonimi, l'assistente non riceve dati personali. |
 | **Design della PA** | Interfaccia [Bootstrap Italia](https://italia.github.io/bootstrap-italia/) (Designers Italia), accessibile, con font e icone in locale: nessuna CDN di terzi. |
 | **Dati aperti** | Il feed GTFS è uno standard: lo stesso file alimenta QuandoPassa, Google Maps, Moovit e i portali open data. |
 | **Pensiline** | Le fermate sono le 20 aree della proposta di localizzazione delle pensiline: la mappa aiuta a discuterle e verificarle. |
 | **IA sotto controllo** | Uso informativo a basso rischio, dichiarato (AI Act art. 50); motore predefinito offline, nessun dato a terzi. |
+| **Biglietti digitali** | Prototipo con tariffe nel `.env`, acquisto anonimo, attivazione alla salita e verifica con QR; chi vende (Comune o gestore) resta da decidere. Vedi [Biglietti](biglietti.md). |
 | **Integrazione** | API JSON aperte e un server MCP: lo stesso servizio può rispondere dentro altri assistenti e portali. |
 | **Riuso** | Codice EUPL-1.2 con `publiccode.yml`: un altro Comune cambia il feed GTFS e il file `.env`. |
 
@@ -28,7 +29,7 @@ e l'azienda hanno già, **l'orario**, e lo trasforma in un servizio informativo 
    indicata da `GTFS_DIR`. Vedi [Il feed GTFS e le fermate](gtfs.md).
 2. **Le coordinate delle fermate.** Il geocoding da OpenStreetMap dà posizioni indicative; dopo il sopralluogo
    si scrivono quelle rilevate e restano fisse.
-3. **Un server.** Tre container Docker, nessun database: una piccola macchina virtuale basta. Vedi
+3. **Un server.** Tre container Docker e un piccolo archivio SQLite per i biglietti: una piccola macchina virtuale basta. Vedi
    [Installazione](installazione.md).
 
 ## Limiti dichiarati

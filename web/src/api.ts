@@ -86,6 +86,58 @@ export interface Info {
   esempi_assistente: string[];
   avvisi: string[];
   tracciati_stradali: boolean;
+  biglietti: InfoBiglietti;
+}
+
+export interface Tariffa {
+  tipo: "corsa" | "carnet" | "abbonamento";
+  nome: string;
+  importo_cent: number;
+  corse: number | null;
+  validita_min: number | null;
+  giorni: number | null;
+  descrizione: string;
+}
+
+export interface InfoBiglietti {
+  attivi: boolean;
+  tariffe?: Tariffa[];
+  pagamenti?: string;
+  fonte?: string;
+}
+
+export interface Acquisto {
+  acquisto_id: string;
+  chiave: string;
+  tipo: string;
+  nome: string;
+  importo_cent: number;
+  causale: string;
+  riferimento: string;
+  url_pagamento: string | null;
+  simulato: boolean;
+}
+
+export interface Titolo {
+  id: string;
+  tipo: "corsa" | "carnet" | "abbonamento";
+  nome: string;
+  stato: "pronto" | "attivo" | "esaurito" | "scaduto";
+  corse_totali: number | null;
+  corse_rimaste: number | null;
+  valido_dal: string;
+  valido_al: string | null;
+  validita_min: number | null;
+  attivazione: { codice: string; attivata: string; scade: string; qr: string; qr_img: string } | null;
+}
+
+export interface EsitoVerifica {
+  esito: "valido" | "scaduto" | "non_valido";
+  messaggio: string;
+  verificato: string;
+  codice?: string;
+  titolo?: string;
+  scade?: string;
 }
 
 export interface Luogo {
@@ -200,12 +252,31 @@ export const api = {
     richiesta<RispostaItinerari>(
       `/itinerari?${q({ da_lat: da.lat, da_lon: da.lon, a_lat: a.lat, a_lon: a.lon, da_nome: da.nome, a_nome: a.nome })}`,
     ),
+  acquista: (tipo: string) => richiesta<Acquisto>("/biglietti/acquisti", { method: "POST", body: JSON.stringify({ tipo }) }),
+  pagamentoSimulato: (a: Acquisto, pagato: boolean) =>
+    richiesta<{ pagato: boolean }>(`/biglietti/acquisti/${a.acquisto_id}/pagamento-simulato`, {
+      method: "POST",
+      body: JSON.stringify({ chiave: a.chiave, pagato }),
+    }),
+  conferma: (acquistoId: string, chiave: string) =>
+    richiesta<Titolo>(`/biglietti/acquisti/${acquistoId}/conferma`, { method: "POST", body: JSON.stringify({ chiave }) }),
+  portafoglio: (chiavi: string[]) =>
+    richiesta<Titolo[]>("/biglietti/portafoglio", { method: "POST", body: JSON.stringify({ chiavi }) }),
+  attiva: (id: string, chiave: string) =>
+    richiesta<Titolo>(`/biglietti/titoli/${id}/attiva`, { method: "POST", body: JSON.stringify({ chiave }) }),
+  verifica: (codice: string, credenziali: string) =>
+    richiesta<EsitoVerifica>("/biglietti/verifica", {
+      method: "POST",
+      body: JSON.stringify({ codice }),
+      headers: { Authorization: `Basic ${credenziali}` },
+    }),
   assistente: (testo: string, lat?: number, lon?: number, ora?: string) =>
     richiesta<RispostaAssistente>(`/assistente?${q({ testo, lat, lon, ora })}`),
 };
 
 // ------------------------------------------------------------------ formattazione
 export const hhmm = (iso: string) => iso.slice(11, 16);
+export const euro = (cent: number) => `${(cent / 100).toFixed(2).replace(".", ",")} €`;
 
 export function traMinuti(min: number): string {
   if (min <= 0) return "ora";

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { Fermata, FermataVicina, Info, Itinerario, LineaDettaglio, Luogo, OrarioGiorno, Partenza } from "./api";
 import { api, hhmm } from "./api";
 import Assistente from "./components/Assistente";
+import Biglietti from "./components/Biglietti";
 import ComeArrivo, { type Campo } from "./components/ComeArrivo";
 import InArrivo from "./components/InArrivo";
 import Mappa from "./components/Mappa";
@@ -183,7 +184,9 @@ export default function App() {
     { id: "percorso", etichetta: "Come arrivo", icona: "it-flag" },
     { id: "fermata", etichetta: "Fermata", icona: "it-map-marker", disabilitata: !selezionata },
     ...(info.assistente ? [{ id: "assistente" as const, etichetta: "Chiedi", icona: "it-comment" }] : []),
-    { id: "servizio", etichetta: "Servizio", icona: "it-info-circle" },
+    info.biglietti.attivi
+      ? { id: "servizio" as const, etichetta: "Biglietti", icona: "it-card" }
+      : { id: "servizio" as const, etichetta: "Servizio", icona: "it-info-circle" },
   ];
 
   return (
@@ -498,6 +501,12 @@ export default function App() {
 
             {pannello === "servizio" && (
               <div className="d-flex flex-column gap-3">
+                {info.biglietti.attivi && (
+                  <>
+                    <Biglietti info={info.biglietti} adesso={adesso} />
+                    <hr className="my-2" />
+                  </>
+                )}
                 <div className="card card-bg no-after">
                   <div className="card-body p-3">
                     <h2 className="h5 card-title mb-1">{info.agenzia}</h2>

@@ -18,20 +18,37 @@ API pubbliche (JSON, /api/v1):
   GET  /itinerari?da_lat&da_lon&a_lat&a_lon   come arrivo porta a porta: a piedi, bus, cambi
   GET  /luoghi?q                       fermate, indirizzi e luoghi per scegliere partenza e arrivo
   GET  /assistente?testo&lat&lon       assistente IA
+Biglietti (prototipo, tariffe nel .env; acquisto anonimo con chiave sul dispositivo):
+  GET  /biglietti                      tariffe e modalità di pagamento
+  POST /biglietti/acquisti             nuovo acquisto {tipo} -> chiave, importo, riferimento di pagamento
+  POST /biglietti/acquisti/{id}/pagamento-simulato   esito del pagamento simulato
+  POST /biglietti/acquisti/{id}/conferma            emette il titolo a pagamento riuscito
+  POST /biglietti/portafoglio          titoli delle chiavi salvate sul dispositivo
+  POST /biglietti/titoli/{id}/attiva   attiva una corsa: codice e QR firmato
+  POST /biglietti/verifica             controllore (HTTP Basic, VERIFICA_USER/VERIFICA_PASSWORD)
 """
 
+import base64
 import logging
 import re
+import secrets
 from datetime import date, datetime, timedelta
+from typing import Annotated
 
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import FileResponse
+import qrcode
+import qrcode.image.svg
+from fastapi import Depends, FastAPI, HTTPException, Query, Request
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 
 from .ai import ClientIA
 from .assistente import ESEMPI, Assistente, AssistenteNonDisponibile
 from .config import Config
+from .biglietti import Biglietteria, ErroreBiglietto
 from .gtfs import Orario
+from .pagamenti import crea_pagamenti
 from .itinerari import Pianificatore
 from .luoghi import Luoghi
 
@@ -51,6 +68,32 @@ class SenzaDatiPersonali(logging.Filter):
 
 
 logging.getLogger("uvicorn.access").addFilter(SenzaDatiPersonali())
+
+
+class AcquistoIn(BaseModel):
+    tipo: str = Field(..., pattern="^(corsa|carnet|abbonamento)$")
+
+
+class ChiaveIn(BaseModel):
+    chiave: str = Field(..., min_length=16, max_length=64)
+
+
+class EsitoSimulatoIn(ChiaveIn):
+    pagato: bool
+
+
+class PortafoglioIn(BaseModel):
+    chiavi: list[str] = Field(default_factory=list, max_length=50)
+
+
+class VerificaIn(BaseModel):
+    codice: str = Field(..., min_length=4, max_length=200)
+
+
+def qr_immagine(dati: str) -> str:
+    """QR come immagine SVG in data URI: il browser lo mostra in un <img>, che non esegue codice."""
+    img = qrcode.make(dati, image_factory=qrcode.image.svg.SvgPathImage, box_size=10, border=2)
+    return "data:image/svg+xml;base64," + base64.b64encode(img.to_string()).decode()
 
 
 class Orologio:
@@ -75,6 +118,8 @@ def create_app(cfg: Config | None = None, ia: ClientIA | None = None) -> FastAPI
     orologio = Orologio(orario.fuso, cfg.demo_ora)
     pianificatore = Pianificatore(orario)
     luoghi = Luoghi(orario, cfg.geocoder, cfg.comune.removeprefix("Comune di ").strip())
+    biglietteria = Biglietteria(cfg, crea_pagamenti(cfg.pagamenti), orologio.adesso) if cfg.biglietti_attivi else None
+    basic = HTTPBasic(auto_error=False)
     assistente = Assistente(cfg, orario, ia)
     log.info("feed %s: %s fermate (%s provvisorie), %s corse", cfg.gtfs_dir, len(orario.fermate),
              orario.info()["fermate_provvisorie"], len(orario.corse))
@@ -97,6 +142,29 @@ def create_app(cfg: Config | None = None, ia: ClientIA | None = None) -> FastAPI
             raise HTTPException(404, f"Fermata {fid} non trovata")
         return f
 
+    @app.exception_handler(ErroreBiglietto)
+    async def _errore_biglietto(_: Request, e: ErroreBiglietto):
+        return JSONResponse({"errore": str(e)}, status_code=e.status)
+
+    def cassa() -> Biglietteria:
+        if biglietteria is None:
+            raise HTTPException(404, "Vendita dei biglietti non attiva (BIGLIETTI_ATTIVI)")
+        return biglietteria
+
+    def controllore(cred: Annotated[HTTPBasicCredentials | None, Depends(basic)]) -> str:
+        if not (cfg.verifica_user and cfg.verifica_password):
+            raise HTTPException(503, "Verifica non configurata (VERIFICA_USER/VERIFICA_PASSWORD)")
+        ok = cred is not None and secrets.compare_digest(cred.username, cfg.verifica_user) \
+            and secrets.compare_digest(cred.password, cfg.verifica_password)
+        if not ok:
+            raise HTTPException(401, "Credenziali non valide")
+        return cred.username
+
+    def con_qr(titolo: dict) -> dict:
+        if titolo.get("attivazione"):
+            titolo["attivazione"]["qr_img"] = qr_immagine(titolo["attivazione"]["qr"])
+        return titolo
+
     # ---------------------------------------------------------- servizio
     @app.get("/api/v1/health")
     def health():
@@ -111,7 +179,7 @@ def create_app(cfg: Config | None = None, ia: ClientIA | None = None) -> FastAPI
         return {**orario.info(), "comune": cfg.comune, "servizio": cfg.servizio, "centro": list(cfg.centro),
                 "mappa": {"tiles": cfg.mappa_tiles, "attribuzione": cfg.mappa_attribuzione},
                 "ora": ora.isoformat(timespec="seconds"), "prossima_corsa": orario.prossima_corsa(ora),
-                "assistente": ia_attiva, "esempi_assistente": ESEMPI,
+                "assistente": ia_attiva, "esempi_assistente": ESEMPI, "biglietti": info_biglietti(),
                 "avvisi": _avvisi(orario)}
 
     @app.get("/api/v1/ora")
@@ -194,6 +262,42 @@ def create_app(cfg: Config | None = None, ia: ClientIA | None = None) -> FastAPI
     @app.get("/api/v1/luoghi")
     def cerca_luoghi(q: str = Query(..., min_length=2, max_length=100)):
         return luoghi.cerca(q)
+
+    # ---------------------------------------------------------- biglietti
+    def info_biglietti() -> dict:
+        if biglietteria is None:
+            return {"attivi": False}
+        return {"attivi": True, "tariffe": [t.json() for t in biglietteria.tariffe.values()],
+                "pagamenti": biglietteria.pagamenti.nome, "fonte": cfg.fonte_tariffe}
+
+    @app.get("/api/v1/biglietti")
+    def biglietti():
+        return info_biglietti()
+
+    @app.post("/api/v1/biglietti/acquisti", status_code=201)
+    def acquista(body: AcquistoIn):
+        return cassa().acquista(body.tipo)
+
+    @app.post("/api/v1/biglietti/acquisti/{aid}/pagamento-simulato")
+    def pagamento_simulato(aid: str, body: EsitoSimulatoIn):
+        cassa().esito_simulato(aid, body.chiave, body.pagato)
+        return {"acquisto_id": aid, "pagato": body.pagato}
+
+    @app.post("/api/v1/biglietti/acquisti/{aid}/conferma")
+    def conferma(aid: str, body: ChiaveIn):
+        return con_qr(cassa().conferma(aid, body.chiave))
+
+    @app.post("/api/v1/biglietti/portafoglio")
+    def portafoglio(body: PortafoglioIn):
+        return [con_qr(t) for t in cassa().portafoglio(body.chiavi)]
+
+    @app.post("/api/v1/biglietti/titoli/{tid}/attiva")
+    def attiva(tid: str, body: ChiaveIn):
+        return con_qr(cassa().attiva(tid, body.chiave))
+
+    @app.post("/api/v1/biglietti/verifica")
+    def verifica(body: VerificaIn, _: Annotated[str, Depends(controllore)]):
+        return cassa().verifica(body.codice)
 
     # ---------------------------------------------------------- assistente
     @app.get("/api/v1/assistente")

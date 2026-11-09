@@ -20,6 +20,7 @@ dell'app: **non conosce segreti e non scrive nulla**.
 | `bus_in_servizio` | bus in servizio con posizione **stimata** dall'orario e prossima fermata |
 | `come_arrivare` | da un punto a una destinazione (fermata, indirizzo o luogo): soluzioni con tratti a piedi, linee, cambi, orari |
 | `orari_linea` | fermate e tracciato di una linea |
+| `tariffe_biglietti` | titoli in vendita con prezzi e regole (solo informazione: nessun agente compra o paga) |
 | `chiedi_assistente` | domanda in italiano all'assistente del servizio |
 
 Le istruzioni del server chiedono agli agenti di dichiarare che le posizioni sono stimate e di non chiedere né

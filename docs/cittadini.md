@@ -76,7 +76,14 @@ colore della linea. Dalla scheda di una fermata, **Portami qui** la imposta come
   <source src="../demo/quandopassa-come-arrivo-verticale.mp4" type="video/mp4">
 </video>
 
-## 5. Chiedi all'assistente
+## 5. Biglietti
+
+Nella scheda **Biglietti** compri una corsa singola, un carnet o un abbonamento, senza registrazione: il
+biglietto resta sul telefono. **Attivalo quando sali**: compare la scritta VALIDO con il colore del giorno, l'ora
+che scorre, un codice e un QR da mostrare all'autista o al controllore. Nel prototipo il pagamento è simulato.
+Dettagli in [Biglietti digitali](biglietti.md).
+
+## 6. Chiedi all'assistente
 
 Nella scheda **Chiedi** puoi scrivere come parleresti a una persona:
 
