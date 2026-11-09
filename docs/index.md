@@ -43,13 +43,13 @@ L'istanza demo usa un orologio fisso su un mercoledì mattina, quando circolano 
     Nessun dato personale salvato, interfaccia Bootstrap Italia, codice EUPL-1.2 riusabile.
 
     [:octicons-arrow-right-24: Benefici per il Comune](comune.md) ·
-    [Feed GTFS e fermate](gtfs.md) · [Biglietti](biglietti.md)
+    [Feed GTFS e fermate](gtfs.md)
 
 -   :material-server: **Sviluppatori e ufficio IT**
 
     ---
 
-    Tre container (app, inferenza, MCP), configurazione in un file `.env`, solo un piccolo archivio SQLite per i biglietti,
+    Tre container (app, inferenza, MCP), nessun database, configurazione in un file `.env`,
     API JSON aperte e un server MCP per collegare assistenti e agenti.
 
     [:octicons-arrow-right-24: Installazione](installazione.md) ·
@@ -93,7 +93,6 @@ E quando conviene, "solo a piedi".*
 | Quando passa | orario da consultare | **"tra ~10 min"**, con fermate e metri che mancano |
 | Faccio in tempo? | a occhio | **"fai in tempo"**, **"affrettati"**, **"non fai in tempo"** |
 | Come arrivo | bisogna conoscere le linee | **itinerario** a piedi + bus, con il cambio e l'orario di arrivo |
-| Biglietto | da comprare prima di salire | **sul telefono**, attivato alla salita, verificabile con QR (prototipo) |
 | Domande | telefono all'azienda | **assistente IA** in italiano, orari calcolati dall'app |
 | Altri sistemi | nessuna integrazione | **API aperte** e **server MCP** |
 

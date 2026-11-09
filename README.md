@@ -30,7 +30,7 @@ Una pagina web, dal telefono o dal computer: niente app da installare, niente re
 | Apri una fermata | Il **bus in arrivo**: tra quanti minuti, a quante fermate e quanti metri, dov'è adesso |
 | Apri **Come arrivo** e scegli partenza e arrivo | Come su un navigatore: quanto camminare, quale bus, **dove cambiare**, a che ora arrivi; il viaggio sulla mappa |
 | Chiedi all'**assistente** *"come arrivo al cimitero?"* | La stessa risposta, in italiano |
-| Compri un **biglietto** (prototipo) | Corsa, carnet o abbonamento senza registrazione; lo attivi alla salita e mostri codice e QR |
+| Tocchi **Acquista il biglietto** | Si apre la biglietteria online dell'azienda di trasporto: QuandoPassa non vende biglietti |
 
 **Onestà sui dati.** Senza GPS a bordo il ritardo non è misurabile: l'app scrive "Ritardo: non rilevabile"
 invece di un "in orario" che non può verificare. La posizione resta sul telefono e non viene salvata.
@@ -50,12 +50,12 @@ invece di un "in orario" che non può verificare. La posizione resta sul telefon
 | Beneficio | Come |
 |---|---|
 | **Nessun hardware** | Niente apparati AVM/GPS, SIM o centrale: basta l'orario in GTFS. |
-| **Nessun dato personale** | Nessun account; posizione e ricerche non salvate; i biglietti sono anonimi; l'assistente non riceve dati personali. |
+| **Nessun dato personale** | Nessun account, nessun database; l'assistente non riceve dati personali. |
 | **Design della PA** | Interfaccia [Bootstrap Italia](https://italia.github.io/bootstrap-italia/) responsive e accessibile, font e icone in locale, nessuna CDN di terzi. |
 | **Pensiline** | Le fermate sono le 20 aree della proposta di localizzazione delle pensiline, geocodificate su OpenStreetMap. |
 | **IA sotto controllo** | Uso informativo a basso rischio (AI Act art. 50), motore predefinito offline, orari mai inventati dal modello. |
 | **Dati aperti e integrazione** | Feed GTFS standard, API JSON aperte e server MCP. |
-| **Biglietti digitali** | Prototipo con tariffe nel `.env`, acquisto anonimo, QR firmato e verifica a bordo; il venditore (Comune con pagoPA o gestore) si sceglie con un adattatore. |
+| **Biglietti fuori dal sito** | Nessuna vendita né pagamento: un pulsante porta alla biglietteria online del gestore (`LINK_BIGLIETTI`). |
 | **Riuso** | Un altro Comune cambia il feed GTFS e il file `.env`; codice EUPL-1.2 con `publiccode.yml`. |
 
 Evoluzione naturale: con un feed **GTFS-Realtime** dell'azienda di trasporto, posizioni e ritardi veri al posto
@@ -68,7 +68,6 @@ scritte nei log.
 
 → [Benefici per il Comune](https://gzileni.github.io/quandopassa/comune/) ·
 [Il feed GTFS e le fermate](https://gzileni.github.io/quandopassa/gtfs/) ·
-[Biglietti digitali](https://gzileni.github.io/quandopassa/biglietti/) ·
 [Conformità normativa](https://gzileni.github.io/quandopassa/conformita/) ·
 [Riuso e Catalogo Developers Italia](https://gzileni.github.io/quandopassa/riuso/)
 
@@ -84,7 +83,7 @@ make demo        # istanza demo su :8001 con orologio fisso (mercoledì 09:00)
 make test        # suite pytest nel container
 ```
 
-Tre container; l'unico archivio è quello anonimo dei biglietti (SQLite su volume):
+Tre container, **nessun database**:
 
 - **app** (`api/` + `web/`): FastAPI con il motore GTFS (posizioni stimate, partenze, fermate vicine, ricerca),
   il calcolo degli itinerari con cambi (`itinerari.py`), la ricerca dei luoghi su OpenStreetMap e l'assistente; interfaccia React con Vite, Bootstrap Italia e Leaflet su OpenStreetMap.
@@ -93,7 +92,7 @@ Tre container; l'unico archivio è quello anonimo dei biglietti (SQLite su volum
   (Ollama del profilo `llm`, vLLM, Azure OpenAI…). L'IA capisce la domanda, l'app calcola la risposta, l'LLM può
   solo riformularla: una riformulazione con numeri diversi viene scartata.
 - **mcp** (`mcp_server/`): server MCP in sola lettura con `cerca_fermata`, `fermate_vicine`,
-  `prossime_partenze`, `bus_in_servizio`, `come_arrivare`, `orari_linea`, `tariffe_biglietti`, `chiedi_assistente`.
+  `prossime_partenze`, `bus_in_servizio`, `come_arrivare`, `orari_linea`, `chiedi_assistente`.
 
 Il feed è nella cartella `GTFS_DIR` (predefinita `data/`): `fermate.csv` e `percorsi.json` sono le sorgenti,
 `make gtfs` rigenera i file GTFS e `make geocode` cerca le fermate su OpenStreetMap e i tracciati stradali con

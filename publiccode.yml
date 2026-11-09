@@ -34,7 +34,6 @@ description:
       - Fermata più vicina con minuti a piedi e indicazione "fai in tempo"
       - Bus in arrivo alla fermata con minuti stimati, fermate e metri mancanti
       - Come arrivo porta a porta con tratti a piedi, bus e cambi, da fermate, indirizzi e luoghi
-      - Biglietti digitali (prototipo) con tariffe configurabili, QR firmato e verifica a bordo
       - Interfaccia Bootstrap Italia responsive e accessibile, senza CDN di terzi
       - Nessun account e nessun database, API JSON aperte documentate in OpenAPI
       - Assistente IA con backend offline deterministico e LLM opzionale

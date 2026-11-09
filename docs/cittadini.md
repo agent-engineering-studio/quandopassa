@@ -78,10 +78,8 @@ colore della linea. Dalla scheda di una fermata, **Portami qui** la imposta come
 
 ## 5. Biglietti
 
-Nella scheda **Biglietti** compri una corsa singola, un carnet o un abbonamento, senza registrazione: il
-biglietto resta sul telefono. **Attivalo quando sali**: compare la scritta VALIDO con il colore del giorno, l'ora
-che scorre, un codice e un QR da mostrare all'autista o al controllore. Nel prototipo il pagamento è simulato.
-Dettagli in [Biglietti digitali](biglietti.md).
+QuandoPassa non vende biglietti. Nella scheda **Servizio** trovi tariffe e informazioni e, se il gestore ha una
+biglietteria online, il pulsante **Acquista il biglietto** che apre il suo sito: acquisto e pagamento avvengono lì.
 
 ## 6. Chiedi all'assistente
 

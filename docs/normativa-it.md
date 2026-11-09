@@ -17,13 +17,12 @@ norma, cosa fa già il software e cosa resta da fare in fase di installazione e 
 | Ambito | Riferimento | Cosa fa il software | Cosa fa l'IT all'installazione |
 |---|---|---|---|
 | **Riuso e open source** | CAD artt. 68-69; Linee guida AgID su acquisizione e riuso | Licenza EUPL-1.2, `publiccode.yml` | Valutazione comparativa ex art. 68 nell'atto di adozione; pubblicazione su Developers Italia |
-| **Cloud** | Regolamento ACN per le infrastrutture e i servizi cloud della PA | Tre container Docker, archivio SQLite dei biglietti su volume, nessun servizio esterno obbligatorio | Ospitare su infrastruttura o servizio cloud **qualificato ACN** |
+| **Cloud** | Regolamento ACN per le infrastrutture e i servizi cloud della PA | Tre container Docker, nessun database, nessun servizio esterno obbligatorio | Ospitare su infrastruttura o servizio cloud **qualificato ACN** |
 | **Design** | Linee guida di design per i servizi digitali della PA | Bootstrap Italia 2.18.3 impacchettato con l'app | Link dalla sezione trasporti del portale del Comune |
 | **Accessibilità** | L. 4/2004; Linee guida AgID; WCAG 2.1 AA / EN 301 549 | Audit axe-core senza violazioni, tastiera e screen reader | Test con utenti; **dichiarazione di accessibilità** su form.agid.gov.it |
 | **Protezione dati** | GDPR artt. 5, 25, 28, 30, 32 | Nessun account, database o cookie; posizione e domande non salvate né nei log | Registro dei trattamenti, informativa validata dal RPD, conservazione dei log, fornitore delle tile |
 | **Sicurezza ICT** | Misure minime di sicurezza ICT per le PA (circolare AgID 2/2017) | Container non-root, inferenza non esposta, MCP in sola lettura su localhost | HTTPS, rate limiting, aggiornamenti, backup della configurazione, vulnerability assessment |
 | **Dati aperti e interoperabilità** | CAD art. 50; Linee guida AgID sull'interoperabilità | Feed GTFS, API REST in OpenAPI (`/api/docs`), server MCP | Pubblicare il feed sul portale open data; valutare PDND se le API servono ad altri enti |
-| **Pagamenti (biglietti)** | CAD art. 5; Linee guida pagoPA; contratto di servizio TPL | Adattatore `PAGAMENTI` (simulato, pagoPA, gestore), titolo emesso solo a pagamento riuscito | Decidere chi vende; completare l'adattatore; trattamento fiscale con la ragioneria |
 | **Intelligenza artificiale** | AI Act (Reg. UE 2024/1689) art. 50; L. 132/2025; Linee guida AgID per l'IA nella PA | Trasparenza in interfaccia, orari calcolati dal codice, redazione dei dati personali, backend tracciato | Valutazione d'impatto prima di attivare un LLM; registro dei sistemi IA dell'ente |
 
 ## Messa in esercizio passo per passo
@@ -91,7 +90,6 @@ dell'ente o un fornitore con nomina a responsabile del trattamento.
 - [ ] `DEMO_ORA` vuoto e feed GTFS aggiornato e valido per le date di esercizio
 - [ ] Coordinate delle fermate confermate dal sopralluogo (`fonte=manuale`)
 - [ ] Fornitore delle tile e del geocoder scelti
-- [ ] Biglietti: `PAGAMENTI` reale o vendita disattivata (`BIGLIETTI_ATTIVI=false`), segreto e credenziali robusti, backup del volume `biglietti`
 - [ ] Registro dei trattamenti e informativa approvati dal RPD
 - [ ] Dichiarazione di accessibilità pubblicata
 - [ ] Valutazione d'impatto IA (se si attiva un LLM)

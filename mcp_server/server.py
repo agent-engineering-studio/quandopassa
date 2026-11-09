@@ -5,7 +5,7 @@ passando dalle sue API HTTP: non legge il database e non conosce i segreti dell'
 
 Strumenti per tutti:
   info_servizio, cerca_fermata, fermate_vicine, prossime_partenze, bus_in_servizio,
-  come_arrivare, orari_linea, tariffe_biglietti, chiedi_assistente
+  come_arrivare, orari_linea, chiedi_assistente
 
     python mcp_server/server.py                         # stdio (Claude Desktop, Claude Code, IDE)
     MCP_TRANSPORT=http python mcp_server/server.py      # HTTP streamable su :8090/mcp
@@ -113,12 +113,6 @@ def crea_server(app: ClientApp | None = None) -> FastMCP:
                 return {k: v for k, v in l.items() if k != "tracciati"} | {
                     "tracciati": [{"id": t["id"], "fermate": t["fermate"]} for t in l["tracciati"]]}
         raise ErroreApp(f"Linea {linea} inesistente")
-
-    @mcp.tool()
-    def tariffe_biglietti() -> dict:
-        """Titoli di viaggio in vendita (corsa singola, carnet, abbonamento) con prezzi e regole. Solo informazione:
-        l'acquisto lo fa la persona nell'app, nessun agente compra o paga al suo posto."""
-        return app.get("/api/v1/biglietti")
 
     @mcp.tool()
     def chiedi_assistente(domanda: str, lat: float | None = None, lon: float | None = None) -> dict:

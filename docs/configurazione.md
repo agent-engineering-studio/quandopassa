@@ -21,7 +21,9 @@ su righe proprie. Dopo ogni modifica: `make up`.
 | `COMUNE_NOME` | `Comune di Gioia del Colle` | Nome dell'ente, nell'header e nel footer |
 | `SERVIZIO_NOME` | `Bus urbano di Gioia del Colle` | Nome del servizio sotto il marchio |
 | `MAPPA_CENTRO` | `40.7990,16.9230` | Centro iniziale della mappa (`lat,lon`) |
-| `INFO_BIGLIETTI` | testo generico | Risposta dell'assistente su biglietti e tariffe: usare il testo ufficiale dell'ente |
+| `INFO_BIGLIETTI` | testo generico | Testo su biglietti e tariffe (scheda Servizio e assistente): usare il testo ufficiale dell'ente |
+| `LINK_BIGLIETTI` | vuoto | Indirizzo del sistema di acquisto online dell'azienda di trasporto: mostra il pulsante "Acquista il biglietto". QuandoPassa non vende biglietti né gestisce pagamenti. Vuoto = nessun pulsante. |
+| `BIGLIETTERIA_NOME` | vuoto | Nome del gestore della biglietteria, mostrato accanto al pulsante |
 
 ## Mappa
 
@@ -29,22 +31,6 @@ su righe proprie. Dopo ogni modifica: `make up`.
 |---|---|---|
 | `MAPPA_TILES` | tile OpenStreetMap | URL delle tile `{z}/{x}/{y}`. Per traffico elevato usare un tile server proprio. |
 | `MAPPA_ATTRIBUZIONE` | © OpenStreetMap contributors | Attribuzione mostrata sulla mappa |
-
-## Biglietti (prototipo)
-
-| Variabile | Predefinito | Significato |
-|---|---|---|
-| `BIGLIETTI_ATTIVI` | `true` | Vendita dei titoli di viaggio attiva |
-| `PAGAMENTI` | `simulato` | `simulato` (nessun denaro), `pagopa` (vende il Comune), `gestore` (vende l'azienda) |
-| `TARIFFA_CORSA`, `VALIDITA_CORSA_MIN` | `1.00`, `60` | Corsa singola: prezzo in euro e minuti di validità |
-| `TARIFFA_CARNET`, `CORSE_CARNET` | `9.00`, `10` | Carnet: prezzo e corse |
-| `TARIFFA_ABBONAMENTO`, `GIORNI_ABBONAMENTO` | `25.00`, `30` | Abbonamento: prezzo e giorni |
-| `FONTE_TARIFFE` | testo di esempio | Atto che fissa le tariffe |
-| `BIGLIETTI_SEGRETO` | da cambiare | Firma dei QR (`openssl rand -hex 32`) |
-| `VERIFICA_USER`, `VERIFICA_PASSWORD` | vuoti | Credenziali del controllore per `/verifica` |
-| `BIGLIETTI_DB` | `:memory:` | Archivio SQLite; Docker usa `/srv/dati/biglietti.sqlite3` sul volume `biglietti` |
-
-Le tariffe di esempio sono inventate. Vedi [Biglietti digitali](biglietti.md).
 
 ## Intelligenza artificiale
 

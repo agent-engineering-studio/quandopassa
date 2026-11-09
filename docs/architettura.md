@@ -17,8 +17,7 @@ flowchart LR
   I -.->|solo con INFERENCE_BACKEND=openai| L[LLM<br>Ollama, vLLM, Azure…]
 ```
 
-Tre servizi in `docker-compose.yml`. L'unico dato conservato è l'archivio dei **biglietti** (SQLite sul volume
-`biglietti`, anonimo); tutto il resto si ricalcola dall'orario.
+Tre servizi in `docker-compose.yml`, **nessun database**:
 
 app (`api/` + `web/`)
 :   FastAPI con il motore GTFS (`gtfs.py`: calendario, posizioni stimate, partenze, fermate vicine, ricerca,
@@ -76,8 +75,3 @@ facoltativo `ora` (ISO 8601) calcola la risposta per un altro istante.
 | GET | `/luoghi?q` | fermate, indirizzi e luoghi per scegliere partenza e arrivo |
 | GET | `/percorso?lat&lon&a` | bus diretto verso una fermata (compatibilità) |
 | GET | `/assistente?testo&lat&lon` | assistente IA |
-| GET | `/biglietti` | tariffe dal `.env` e modalità di pagamento |
-| POST | `/biglietti/acquisti` | nuovo acquisto: chiave del dispositivo e riferimento di pagamento |
-| POST | `/biglietti/acquisti/{id}/conferma` | emette il titolo a pagamento riuscito (idempotente) |
-| POST | `/biglietti/portafoglio` · `/biglietti/titoli/{id}/attiva` | titoli del dispositivo; attivazione con codice e QR firmato |
-| POST | `/biglietti/verifica` | esito per il controllore (HTTP Basic) |

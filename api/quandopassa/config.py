@@ -37,20 +37,8 @@ class Config:
         "MAPPA_ATTRIBUZIONE", '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'))
     # ricerca di indirizzi e luoghi per "come arrivo" (Nominatim o istanza dell'ente; vuoto = solo fermate)
     geocoder: str = field(default_factory=lambda: _env("LUOGHI_GEOCODER", "https://nominatim.openstreetmap.org"))
-    # biglietti (prototipo): tariffe e regole dei titoli di viaggio, pagamento intercambiabile
-    biglietti_attivi: bool = field(default_factory=lambda: _env("BIGLIETTI_ATTIVI", "true").lower() in ("1", "true", "si"))
-    biglietti_db: str = field(default_factory=lambda: _env("BIGLIETTI_DB", ":memory:"))
-    biglietti_segreto: str = field(default_factory=lambda: _env("BIGLIETTI_SEGRETO", "sviluppo-non-usare-in-produzione"))
-    pagamenti: str = field(default_factory=lambda: _env("PAGAMENTI", "simulato"))
-    tariffa_corsa: str = field(default_factory=lambda: _env("TARIFFA_CORSA", "1.00"))
-    validita_corsa_min: int = field(default_factory=lambda: int(_env("VALIDITA_CORSA_MIN", "60")))
-    tariffa_carnet: str = field(default_factory=lambda: _env("TARIFFA_CARNET", "9.00"))
-    corse_carnet: int = field(default_factory=lambda: int(_env("CORSE_CARNET", "10")))
-    tariffa_abbonamento: str = field(default_factory=lambda: _env("TARIFFA_ABBONAMENTO", "25.00"))
-    giorni_abbonamento: int = field(default_factory=lambda: int(_env("GIORNI_ABBONAMENTO", "30")))
-    fonte_tariffe: str = field(default_factory=lambda: _env(
-        "FONTE_TARIFFE", "Tariffe di esempio del prototipo: da sostituire con quelle deliberate dall'ente."))
-    verifica_user: str = field(default_factory=lambda: _env("VERIFICA_USER"))
-    verifica_password: str = field(default_factory=lambda: _env("VERIFICA_PASSWORD"))
+    # biglietti: QuandoPassa non li vende; rimanda al sistema di acquisto online dell'azienda di trasporto
+    link_biglietti: str = field(default_factory=lambda: _env("LINK_BIGLIETTI"))
+    biglietteria_nome: str = field(default_factory=lambda: _env("BIGLIETTERIA_NOME"))
     demo_ora: str = field(default_factory=lambda: _env("DEMO_ORA"))
     web_dist: Path = field(default_factory=lambda: _cartella("WEB_DIST", "web/dist"))

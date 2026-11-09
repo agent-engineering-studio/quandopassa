@@ -28,8 +28,7 @@ def test_strumenti_pubblici(client):
     _, mcp = _server(client)
     nomi = _strumenti(mcp)
     assert {"info_servizio", "cerca_fermata", "fermate_vicine", "prossime_partenze", "bus_in_servizio",
-            "come_arrivare", "orari_linea", "tariffe_biglietti", "chiedi_assistente"} == nomi
-    assert {t["tipo"] for t in _chiama(mcp, "tariffe_biglietti")["tariffe"]} == {"corsa", "carnet", "abbonamento"}
+            "come_arrivare", "orari_linea", "chiedi_assistente"} == nomi
     assert _chiama(mcp, "cerca_fermata", nome="plebiscito")[0]["id"] == "R02"
     p = _chiama(mcp, "prossime_partenze", fermata_id="R05", n=2, ora=MERCOLEDI_9.isoformat())
     assert p[0]["orario"].startswith("2026-11-11T09:10")

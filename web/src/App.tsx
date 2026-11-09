@@ -2,7 +2,6 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { Fermata, FermataVicina, Info, Itinerario, LineaDettaglio, Luogo, OrarioGiorno, Partenza } from "./api";
 import { api, hhmm } from "./api";
 import Assistente from "./components/Assistente";
-import Biglietti from "./components/Biglietti";
 import ComeArrivo, { type Campo } from "./components/ComeArrivo";
 import InArrivo from "./components/InArrivo";
 import Mappa from "./components/Mappa";
@@ -184,9 +183,7 @@ export default function App() {
     { id: "percorso", etichetta: "Come arrivo", icona: "it-flag" },
     { id: "fermata", etichetta: "Fermata", icona: "it-map-marker", disabilitata: !selezionata },
     ...(info.assistente ? [{ id: "assistente" as const, etichetta: "Chiedi", icona: "it-comment" }] : []),
-    info.biglietti.attivi
-      ? { id: "servizio" as const, etichetta: "Biglietti", icona: "it-card" }
-      : { id: "servizio" as const, etichetta: "Servizio", icona: "it-info-circle" },
+    { id: "servizio", etichetta: "Servizio", icona: "it-info-circle" },
   ];
 
   return (
@@ -207,7 +204,13 @@ export default function App() {
               <a className="navbar-brand" href={info.sito}>
                 {info.comune}
               </a>
-              <div className="it-header-slim-right-zone">
+              <div className="it-header-slim-right-zone gap-3">
+                {info.biglietti.url && (
+                  <a className="text-white small" href={info.biglietti.url} target="_blank" rel="noopener noreferrer">
+                    Biglietti
+                    <span className="visually-hidden"> (sito esterno, si apre in una nuova scheda)</span>
+                  </a>
+                )}
                 <a className="text-white small d-none d-md-inline" href="/api/docs">
                   API aperte
                 </a>
@@ -375,7 +378,7 @@ export default function App() {
                     Attiva la posizione: troviamo la fermata più vicina e ti diciamo se fai in tempo a prendere il
                     prossimo bus, confrontando l'ora attuale con l'orario ufficiale.
                   </p>
-                  <button type="button" className="btn btn-primary btn-icon w-100 justify-content-center" onClick={localizza} disabled={cercoPosizione}>
+                  <button type="button" className="btn btn-primary btn-icon w-100 justify-content-center gap-2" onClick={localizza} disabled={cercoPosizione}>
                     <Icona nome="it-map-marker-circle" classe="icon-white" />
                     <span>{cercoPosizione ? "Cerco la posizione…" : "Usa la mia posizione"}</span>
                   </button>
@@ -501,12 +504,30 @@ export default function App() {
 
             {pannello === "servizio" && (
               <div className="d-flex flex-column gap-3">
-                {info.biglietti.attivi && (
-                  <>
-                    <Biglietti info={info.biglietti} adesso={adesso} />
-                    <hr className="my-2" />
-                  </>
-                )}
+                <section className="card-biglietti p-3" aria-labelledby="titolo-biglietti">
+                  <h2 id="titolo-biglietti" className="h5">
+                    Biglietti
+                  </h2>
+                  <p className="small mb-3">{info.biglietti.info}</p>
+                  {info.biglietti.url && (
+                    <>
+                      <a
+                        className="btn btn-primary btn-icon w-100 justify-content-center gap-2"
+                        href={info.biglietti.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <span>Acquista il biglietto</span>
+                        <Icona nome="it-external-link" classe="icon-white icon-sm" />
+                        <span className="visually-hidden"> (sito esterno, si apre in una nuova scheda)</span>
+                      </a>
+                      <p className="small text-muted mt-2 mb-0">
+                        Acquisto e pagamento avvengono sul sito {info.biglietti.nome ? `di ${info.biglietti.nome}` : "dell'azienda di trasporto"}:
+                        QuandoPassa non vende biglietti e non riceve dati di pagamento.
+                      </p>
+                    </>
+                  )}
+                </section>
                 <div className="card card-bg no-after">
                   <div className="card-body p-3">
                     <h2 className="h5 card-title mb-1">{info.agenzia}</h2>

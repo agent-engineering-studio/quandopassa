@@ -14,10 +14,6 @@ from playwright.sync_api import sync_playwright
 RADICE = Path(__file__).resolve().parents[1]
 AXE = (RADICE / "web" / "node_modules" / "axe-core" / "axe.min.js").read_text()
 BASE = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:8001"
-# credenziali del controllore dal .env, per controllare anche la schermata dell'esito
-_ENV = dict(r.strip().split("=", 1) for r in (RADICE / ".env").read_text().splitlines()
-            if "=" in r and not r.startswith("#")) if (RADICE / ".env").exists() else {}
-VERIFICA = (_ENV["VERIFICA_USER"], _ENV["VERIFICA_PASSWORD"]) if _ENV.get("VERIFICA_PASSWORD") else None
 TOTALE = 0
 
 
@@ -51,18 +47,6 @@ with sync_playwright() as p:
         cam = pg.locator(".campo-luogo input").nth(1); cam.click(); cam.press_sequentially("cimitero", delay=30); pg.wait_for_timeout(1200)
         pg.keyboard.press("Enter"); pg.wait_for_selector(".soluzione"); pg.locator(".soluzione-testa").nth(1).click(); pg.wait_for_timeout(500)
         audit(pg, f"{suff} come arrivo soluzioni")
-        pg.locator("#scheda-servizio").click(); pg.wait_for_selector("button[aria-label^='Acquista Carnet']")
-        pg.locator("button[aria-label^='Acquista Carnet']").click(); pg.wait_for_selector(".pagopa-simulato")
-        audit(pg, f"{suff} biglietti pagamento simulato")
-        pg.locator(".pagopa-simulato button:has-text('Paga')").click(); pg.wait_for_selector("text=Attiva una corsa")
-        pg.locator("button:has-text('Attiva una corsa')").click(); pg.locator("button:has-text('Attiva adesso')").click()
-        pg.wait_for_selector(".biglietto-attivo"); audit(pg, f"{suff} biglietto attivo")
-        codice = pg.locator(".biglietto-codice").inner_text().replace(" ", "")
-        v = c.new_page(); v.goto(BASE + "/verifica"); v.wait_for_selector("#utente"); audit(v, f"{suff} verifica accesso")
-        if VERIFICA:
-            v.fill("#utente", VERIFICA[0]); v.fill("#password", VERIFICA[1]); v.click("button:has-text('Entra')")
-            v.fill("#codice", codice); v.click("button:has-text('Verifica')"); v.wait_for_selector(".esito-verifica")
-            audit(v, f"{suff} verifica esito")
         c.close()
     b.close()
 

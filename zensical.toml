@@ -22,7 +22,6 @@ nav = [
   { "Comune" = [
     { "Benefici per il Comune" = "comune.md" },
     { "Il feed GTFS e le fermate" = "gtfs.md" },
-    { "Biglietti digitali (prototipo)" = "biglietti.md" },
     { "Conformità normativa" = "conformita.md" },
     { "Riuso e Catalogo Developers Italia" = "riuso.md" },
   ] },
