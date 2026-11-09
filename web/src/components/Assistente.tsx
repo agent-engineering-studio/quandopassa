@@ -1,8 +1,7 @@
-import { ActionIcon, Badge, Group, Paper, ScrollArea, Stack, Text, TextInput } from "@mantine/core";
-import { IconRobot, IconSend } from "@tabler/icons-react";
 import { useEffect, useRef, useState } from "react";
 import type { RispostaAssistente } from "../api";
 import { api } from "../api";
+import Icona from "../Icona";
 
 interface Messaggio {
   da: "utente" | "assistente";
@@ -27,10 +26,10 @@ export default function Assistente({ esempi, posizione, ora, onFermata }: Props)
   ]);
   const [testo, setTesto] = useState("");
   const [attesa, setAttesa] = useState(false);
-  const fondo = useRef<HTMLDivElement>(null);
+  const chat = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fondo.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    chat.current?.scrollTo({ top: chat.current.scrollHeight, behavior: "smooth" });
   }, [messaggi]);
 
   const chiedi = async (domanda: string) => {
@@ -51,59 +50,66 @@ export default function Assistente({ esempi, posizione, ora, onFermata }: Props)
   };
 
   return (
-    <Stack gap="xs" h="100%">
-      <ScrollArea.Autosize mah={380} type="auto">
-        <Stack gap="xs">
-          {messaggi.map((m, i) => (
-            <Group key={i} justify={m.da === "utente" ? "flex-end" : "flex-start"} align="flex-start" wrap="nowrap" gap={6}>
-              {m.da === "assistente" && <IconRobot size={18} style={{ flexShrink: 0, marginTop: 6 }} />}
-              <Paper
-                p="xs"
-                radius="lg"
-                maw="85%"
-                bg={m.da === "utente" ? "var(--mantine-color-blue-filled)" : "var(--mantine-color-default-hover)"}
-                c={m.da === "utente" ? "white" : undefined}
-              >
-                <Text size="sm">{m.testo}</Text>
-                {m.meta && (
-                  <Text size="10px" c="dimmed" mt={4}>
-                    {m.meta.generato_da_ia ? "Risposta generata con IA" : "Risposta automatica"} · {m.meta.fonti.join(", ") || "base di conoscenza"}
-                  </Text>
-                )}
-              </Paper>
-            </Group>
-          ))}
-          {attesa && (
-            <Text size="xs" c="dimmed">
-              Sto controllando l'orario…
-            </Text>
-          )}
-          <div ref={fondo} />
-        </Stack>
-      </ScrollArea.Autosize>
-      <Group gap={6}>
-        {esempi.slice(0, 4).map((e) => (
-          <Badge key={e} variant="light" radius="sm" tt="none" style={{ cursor: "pointer" }} onClick={() => chiedi(e)}>
-            {e}
-          </Badge>
+    <section aria-labelledby="titolo-assistente">
+      <h2 id="titolo-assistente" className="h5">
+        Chiedi all'assistente
+      </h2>
+      <div ref={chat} className="chat d-flex flex-column gap-2 mb-3" aria-live="polite">
+        {messaggi.map((m, i) => (
+          <div key={i} className={`fumetto ${m.da === "utente" ? "fumetto-utente" : "fumetto-assistente"}`}>
+            <span className="visually-hidden">{m.da === "utente" ? "Tu: " : "Assistente: "}</span>
+            {m.testo}
+            {m.meta && (
+              <span className="d-block small text-muted mt-1">
+                {m.meta.generato_da_ia ? "Risposta generata con IA" : "Risposta automatica"} ·{" "}
+                {m.meta.fonti.join(", ") || "base di conoscenza"}
+              </span>
+            )}
+          </div>
         ))}
-      </Group>
-      <TextInput
-        placeholder="Scrivi una domanda…"
-        value={testo}
-        maxLength={500}
-        onChange={(e) => setTesto(e.currentTarget.value)}
-        onKeyDown={(e) => e.key === "Enter" && chiedi(testo)}
-        rightSection={
-          <ActionIcon variant="filled" onClick={() => chiedi(testo)} loading={attesa} aria-label="Invia">
-            <IconSend size={16} />
-          </ActionIcon>
-        }
-      />
-      <Text size="10px" c="dimmed">
-        Assistente automatico (IA): le risposte si basano sull'orario programmato, verifica sempre alla fermata. La
-        posizione, se attiva, serve solo a questa domanda e non viene salvata.
-      </Text>
-    </Stack>
+        {attesa && <p className="small text-muted mb-0">Sto controllando l'orario…</p>}
+      </div>
+
+      <div className="d-flex flex-wrap gap-2 mb-3" role="group" aria-label="Domande di esempio">
+        {esempi.slice(0, 4).map((e) => (
+          <button key={e} type="button" className="btn btn-outline-primary btn-xs" onClick={() => chiedi(e)}>
+            {e}
+          </button>
+        ))}
+      </div>
+
+      <form
+        className="d-flex gap-2 align-items-end"
+        onSubmit={(e) => {
+          e.preventDefault();
+          chiedi(testo);
+        }}
+      >
+        <div className="form-group mb-0 flex-grow-1">
+          <label htmlFor="domanda" className="active">
+            La tua domanda
+          </label>
+          <input
+            id="domanda"
+            type="text"
+            className="form-control"
+            placeholder="es. quando passa la A in piazza?"
+            value={testo}
+            maxLength={500}
+            autoComplete="off"
+            onChange={(e) => setTesto(e.currentTarget.value)}
+          />
+        </div>
+        <button type="submit" className="btn btn-primary" disabled={attesa || !testo.trim()}>
+          <Icona nome="it-arrow-right" classe="icon-white icon-sm" />
+          <span className="visually-hidden">Invia</span>
+        </button>
+      </form>
+      <p className="small text-muted mt-2 mb-0">
+        <Icona nome="it-info-circle" classe="icon-xs" /> Assistente automatico (IA): le risposte si basano sull'orario
+        programmato, verifica sempre alla fermata. La posizione, se attiva, serve solo a questa domanda e non viene
+        salvata.
+      </p>
+    </section>
   );
 }

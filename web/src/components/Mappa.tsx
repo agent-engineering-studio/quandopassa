@@ -52,6 +52,17 @@ function Centra({ centro }: { centro: [number, number] | null }) {
   return null;
 }
 
+// il contenitore cambia dimensione (rotazione, layout mobile/desktop): Leaflet va avvisato
+function Ridimensiona() {
+  const map = useMap();
+  useEffect(() => {
+    const ro = new ResizeObserver(() => map.invalidateSize());
+    ro.observe(map.getContainer());
+    return () => ro.disconnect();
+  }, [map]);
+  return null;
+}
+
 function Adatta({ fermate }: { fermate: Fermata[] }) {
   const map = useMap();
   useEffect(() => {
@@ -72,6 +83,7 @@ export default function Mappa(p: Props) {
   return (
     <MapContainer center={p.info.centro} zoom={15} zoomControl={false} className="mappa" preferCanvas={false}>
       <TileLayer url={p.info.mappa.tiles} attribution={p.info.mappa.attribuzione} maxZoom={19} />
+      <Ridimensiona />
       <Adatta fermate={p.fermate} />
       <Centra centro={p.centraSu} />
 
@@ -91,7 +103,7 @@ export default function Mappa(p: Props) {
         .filter((f) => (f.linee ?? []).some((l) => p.lineeVisibili.includes(l)))
         .map((f) => {
           const sel = f.id === p.selezionata;
-          const colore = coloreLinea.get((f.linee ?? [])[0] ?? "") ?? "#1C7ED6";
+          const colore = coloreLinea.get((f.linee ?? [])[0] ?? "") ?? "#0066cc";
           return (
             <CircleMarker
               key={f.id}
@@ -122,12 +134,12 @@ export default function Mappa(p: Props) {
           <Circle
             center={[p.posizione.lat, p.posizione.lon]}
             radius={Math.min(p.posizione.accuratezza, 200)}
-            pathOptions={{ color: "#228be6", weight: 1, fillOpacity: 0.1 }}
+            pathOptions={{ color: "#0066cc", weight: 1, fillOpacity: 0.1 }}
           />
           <CircleMarker
             center={[p.posizione.lat, p.posizione.lon]}
             radius={8}
-            pathOptions={{ color: "#fff", weight: 3, fillColor: "#228be6", fillOpacity: 1 }}
+            pathOptions={{ color: "#fff", weight: 3, fillColor: "#0066cc", fillOpacity: 1 }}
           >
             <Tooltip>Sei qui</Tooltip>
           </CircleMarker>

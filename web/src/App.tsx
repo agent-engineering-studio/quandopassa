@@ -1,46 +1,14 @@
-import {
-  ActionIcon,
-  Alert,
-  Badge,
-  Box,
-  Button,
-  Chip,
-  Divider,
-  Drawer,
-  Group,
-  Loader,
-  Paper,
-  Popover,
-  ScrollArea,
-  Select,
-  Stack,
-  Tabs,
-  Text,
-  TextInput,
-  Title,
-  Tooltip,
-} from "@mantine/core";
-import { useMediaQuery } from "@mantine/hooks";
-import { notifications } from "@mantine/notifications";
-import {
-  IconBus,
-  IconClock,
-  IconCurrentLocation,
-  IconInfoCircle,
-  IconMapPin,
-  IconMessageChatbot,
-  IconStar,
-  IconX,
-} from "@tabler/icons-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Fermata, FermataVicina, Info, LineaDettaglio, OrarioGiorno, Partenza } from "./api";
 import { api, hhmm } from "./api";
 import Assistente from "./components/Assistente";
 import Mappa from "./components/Mappa";
 import Partenze from "./components/Partenze";
 import Recensioni from "./components/Recensioni";
+import Icona, { IconaBus } from "./Icona";
 import { hhmmDaSecondi, secondiDelGiorno, veicoliAl } from "./motore";
-import { daLocale, giornoLocale, isoLocale, oraLocale, useOrologio } from "./orologio";
+import { notifica } from "./notifiche";
+import { giornoLocale, isoLocale, oraLocale, useOrologio } from "./orologio";
 
 type Pannello = "vicino" | "fermata" | "assistente" | "servizio";
 interface Posizione {
@@ -49,9 +17,10 @@ interface Posizione {
   accuratezza: number;
 }
 
+const MOBILE = "(max-width: 991.98px)";
+
 export default function App() {
-  const mobile = useMediaQuery("(max-width: 48em)");
-  const { adesso, simulato, simula } = useOrologio(1000);
+  const adesso = useOrologio(1000);
   const oggi = giornoLocale(adesso);
 
   const [info, setInfo] = useState<Info | null>(null);
@@ -61,7 +30,6 @@ export default function App() {
   const [orario, setOrario] = useState<OrarioGiorno | null>(null);
   const [lineeVisibili, setLineeVisibili] = useState<string[]>([]);
   const [pannello, setPannello] = useState<Pannello>("vicino");
-  const [aperto, setAperto] = useState(true);
   const [selezionata, setSelezionata] = useState<string | null>(null);
   const [partenze, setPartenze] = useState<Partenza[]>([]);
   const [posizione, setPosizione] = useState<Posizione | null>(null);
@@ -72,6 +40,8 @@ export default function App() {
   const [valutazione, setValutazione] = useState("generale");
   const watchId = useRef<number | null>(null);
   const ultimaPosVicine = useRef<string>("");
+  const testata = useRef<HTMLElement>(null);
+  const riquadro = useRef<HTMLElement>(null);
 
   // ------------------------------------------------------------ dati statici
   const caricaFermate = useCallback(() => api.fermate().then(setFermate), []);
@@ -86,9 +56,9 @@ export default function App() {
       .catch((e) => setErrore((e as Error).message));
   }, []);
 
-  // orario del giorno (cambia a mezzanotte o con la simulazione)
+  // orario del giorno (cambia a mezzanotte)
   useEffect(() => {
-    let valido = true; // ignora risposte arrivate dopo un cambio di giorno (sincronizzazione orologio, simulazione)
+    let valido = true; // ignora risposte arrivate dopo un cambio di giorno (es. sincronizzazione dell'orologio)
     api
       .orario(oggi)
       .then((o) => valido && setOrario(o))
@@ -98,8 +68,23 @@ export default function App() {
     };
   }, [oggi]);
 
-  const oraApi = simulato ? isoLocale(adesso).slice(0, 16) : undefined;
   const veicoli = useMemo(() => (orario ? veicoliAl(orario, secondiDelGiorno(adesso, orario)) : []), [orario, adesso]);
+
+  // altezza dell'header PA: da desktop mappa e pannello occupano il resto dello schermo
+  useLayoutEffect(() => {
+    const el = testata.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() =>
+      document.documentElement.style.setProperty("--altezza-testata", `${el.offsetHeight}px`),
+    );
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [info]);
+
+  // da mobile il pannello sta sotto la mappa: portarlo in vista quando cambia contenuto
+  const mostraPannello = () => {
+    if (window.matchMedia(MOBILE).matches) riquadro.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   // ------------------------------------------------------------ fermata selezionata
   const minutoCorrente = isoLocale(adesso).slice(0, 16);
@@ -112,7 +97,6 @@ export default function App() {
     (id: string) => {
       setSelezionata(id);
       setPannello("fermata");
-      setAperto(true);
       const f = fermate.find((x) => x.id === id);
       if (f) setCentraSu([f.lat, f.lon]);
     },
@@ -122,7 +106,7 @@ export default function App() {
   // ------------------------------------------------------------ geolocalizzazione
   const localizza = () => {
     if (!("geolocation" in navigator)) {
-      notifications.show({ color: "red", message: "Il browser non supporta la geolocalizzazione." });
+      notifica("danger", "Il browser non supporta la geolocalizzazione.");
       return;
     }
     setCercoPosizione(true);
@@ -139,11 +123,11 @@ export default function App() {
       },
       (e) => {
         setCercoPosizione(false);
-        notifications.show({
-          color: "red",
-          title: "Posizione non disponibile",
-          message: e.code === 1 ? "Permesso negato: abilitalo nelle impostazioni del browser." : e.message,
-        });
+        notifica(
+          "danger",
+          e.code === 1 ? "Permesso negato: abilitalo nelle impostazioni del browser." : e.message,
+          "Posizione non disponibile",
+        );
       },
       { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 },
     );
@@ -167,15 +151,21 @@ export default function App() {
   // ------------------------------------------------------------ render
   if (errore)
     return (
-      <Alert color="red" m="md" title="Servizio non raggiungibile">
-        {errore}
-      </Alert>
+      <main className="container my-5">
+        <div className="alert alert-danger" role="alert">
+          <strong className="d-block">Servizio non raggiungibile</strong>
+          {errore}
+        </div>
+      </main>
     );
   if (!info)
     return (
-      <Group justify="center" h="100vh">
-        <Loader />
-      </Group>
+      <main className="container my-5" aria-busy="true">
+        <p className="text-muted">Caricamento del servizio…</p>
+        <div className="progress progress-indeterminate" role="progressbar" aria-label="Caricamento">
+          <div className="progress-bar" />
+        </div>
+      </main>
     );
 
   const nessunBus = veicoli.length === 0;
@@ -184,337 +174,438 @@ export default function App() {
     .filter((s) => s > secondiDelGiorno(adesso, orario))
     .sort((a, b) => a - b)[0];
 
-  const contenutoPannello = (
-    <Tabs value={pannello} onChange={(v) => setPannello((v as Pannello) ?? "vicino")} keepMounted={false}>
-      <Tabs.List grow>
-        <Tabs.Tab value="vicino" leftSection={<IconCurrentLocation size={14} />}>
-          Vicino
-        </Tabs.Tab>
-        <Tabs.Tab value="fermata" leftSection={<IconMapPin size={14} />} disabled={!selezionata}>
-          Fermata
-        </Tabs.Tab>
-        {info.assistente && (
-          <Tabs.Tab value="assistente" leftSection={<IconMessageChatbot size={14} />}>
-            Chiedi
-          </Tabs.Tab>
-        )}
-        <Tabs.Tab value="servizio" leftSection={<IconStar size={14} />}>
-          Servizio
-        </Tabs.Tab>
-      </Tabs.List>
+  const schede: { id: Pannello; etichetta: string; icona: string; disabilitata?: boolean }[] = [
+    { id: "vicino", etichetta: "Vicino a te", icona: "it-map-marker-circle" },
+    { id: "fermata", etichetta: "Fermata", icona: "it-map-marker", disabilitata: !selezionata },
+    ...(info.assistente ? [{ id: "assistente" as const, etichetta: "Chiedi", icona: "it-comment" }] : []),
+    { id: "servizio", etichetta: "Servizio", icona: "it-star-outline" },
+  ];
 
-      <Tabs.Panel value="vicino" pt="sm">
-        {!posizione ? (
-          <Stack gap="sm">
-            <Text size="sm">
-              Attiva la posizione: troviamo la fermata più vicina e ti diciamo se fai in tempo a prendere il prossimo
-              bus, confrontando l'ora attuale con l'orario ufficiale.
-            </Text>
-            <Button leftSection={<IconCurrentLocation size={16} />} onClick={localizza} loading={cercoPosizione}>
-              Usa la mia posizione
-            </Button>
-            <Text size="xs" c="dimmed">
-              La posizione resta sul tuo dispositivo e serve solo a questo calcolo.
-            </Text>
-          </Stack>
-        ) : !vicine ? (
-          <Loader size="sm" />
-        ) : (
-          <Stack gap="md">
-            {vicine.map((v, i) => (
-              <Paper key={v.id} withBorder p="sm" radius="md" className="card-fermata" onClick={() => apriFermata(v.id)}>
-                <Group justify="space-between" wrap="nowrap" mb={6}>
-                  <div>
-                    <Text size="xs" c="dimmed">
-                      {i === 0 ? "Fermata più vicina" : "Alternativa"}
-                    </Text>
-                    <Text fw={600}>{v.nome}</Text>
-                  </div>
-                  <Stack gap={0} align="flex-end">
-                    <Text size="sm" fw={600}>
-                      {v.distanza_m < 1000 ? `${v.distanza_m} m` : `${(v.distanza_m / 1000).toFixed(1)} km`}
-                    </Text>
-                    <Text size="xs" c="dimmed">
-                      {v.a_piedi_min} min a piedi
-                    </Text>
-                  </Stack>
-                </Group>
-                <Partenze partenze={v.partenze} oggi={oggi} aPiediMin={v.a_piedi_min} onCorsa={setCorsaEvidenziata} />
-              </Paper>
+  return (
+    <>
+      <div className="skiplinks">
+        <a className="visually-hidden-focusable" href="#pannello">
+          Vai ai contenuti
+        </a>
+        <a className="visually-hidden-focusable" href="#piede">
+          Vai al piè di pagina
+        </a>
+      </div>
+
+      <header ref={testata} className="it-header-wrapper">
+        <div className="it-header-slim-wrapper">
+          <div className="container-fluid px-3 px-lg-4">
+            <div className="it-header-slim-wrapper-content">
+              <a className="navbar-brand" href={info.sito}>
+                {info.comune}
+              </a>
+              <div className="it-header-slim-right-zone">
+                <a className="text-white small d-none d-md-inline" href="/api/docs">
+                  API aperte
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="it-nav-wrapper">
+          <div className="it-header-center-wrapper it-small-header">
+            <div className="container-fluid px-3 px-lg-4">
+              <div className="it-header-center-content-wrapper">
+                <div className="it-brand-wrapper ps-0">
+                  <a href="/">
+                    <span className="me-2 text-white d-inline-flex">
+                      <IconaBus dim={40} />
+                    </span>
+                    <div className="it-brand-text">
+                      <div className="it-brand-title">QuandoPassa</div>
+                      <div className="it-brand-tagline">{info.servizio}</div>
+                    </div>
+                  </a>
+                </div>
+                <div className="it-right-zone d-none d-sm-flex">
+                  <span className="text-white small text-end">
+                    <strong className="d-block tabular">
+                      {veicoli.length} {veicoli.length === 1 ? "bus" : "bus"} in servizio
+                    </strong>
+                    posizione stimata dall'orario
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="area">
+        <div className="colonna-mappa">
+          <div className="barra px-3 py-2 d-flex flex-wrap align-items-center gap-2">
+            <ul className="list-unstyled d-flex gap-2 mb-0" aria-label="Linee mostrate sulla mappa">
+              {linee.map((l) => {
+                const attiva = lineeVisibili.includes(l.id);
+                return (
+                  <li key={l.id}>
+                    <button
+                      type="button"
+                      className="chip chip-lg chip-linea"
+                      style={{ ["--c" as string]: l.colore }}
+                      aria-pressed={attiva}
+                      onClick={() =>
+                        setLineeVisibili((v) => (attiva ? v.filter((x) => x !== l.id) : [...v, l.id]))
+                      }
+                    >
+                      <span className="chip-label">{l.nome_esteso}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <CercaFermata
+              fermate={fermate}
+              onScelta={(id) => {
+                apriFermata(id);
+                mostraPannello();
+              }}
+            />
+            <Orologio adesso={adesso} />
+          </div>
+
+          <div className="mappa-box">
+            <Mappa
+              info={info}
+              linee={linee}
+              fermate={fermate}
+              veicoli={veicoli}
+              lineeVisibili={lineeVisibili}
+              posizione={posizione}
+              selezionata={selezionata}
+              corsaEvidenziata={corsaEvidenziata}
+              onFermata={(id) => {
+                apriFermata(id);
+                mostraPannello();
+              }}
+              centraSu={centraSu}
+            />
+
+            {nessunBus && (
+              <div className="avviso-mappa alert alert-warning bg-white shadow-sm py-2 mb-0 d-flex align-items-center gap-2 flex-wrap">
+                <span className="flex-grow-1 small">
+                  <strong>Nessun bus in servizio ora.</strong>
+                  {prossimaCorsa !== undefined
+                    ? ` Prima corsa alle ${hhmmDaSecondi(prossimaCorsa)}.`
+                    : info.prossima_corsa
+                      ? ` Prossima: ${info.prossima_corsa.partenza.slice(0, 10) === oggi ? "" : "il " + info.prossima_corsa.partenza.slice(8, 10) + "/" + info.prossima_corsa.partenza.slice(5, 7) + " "}alle ${hhmm(info.prossima_corsa.partenza)}.`
+                      : ""}
+                </span>
+              </div>
+            )}
+
+            <div className="pulsanti-mappa">
+              <button
+                type="button"
+                className={`btn-mappa ${posizione ? "attivo" : ""}`}
+                onClick={() => {
+                  localizza();
+                  setPannello("vicino");
+                }}
+                disabled={cercoPosizione}
+                aria-label="Usa la mia posizione"
+                title="La mia posizione"
+              >
+                <Icona nome="it-map-marker-circle" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <section ref={riquadro} id="pannello" className="pannello" aria-label="Informazioni sul servizio" tabIndex={-1}>
+          <ul className="nav nav-tabs" role="tablist">
+            {schede.map((s) => (
+              <li key={s.id} className="nav-item" role="presentation">
+                <button
+                  type="button"
+                  role="tab"
+                  id={`scheda-${s.id}`}
+                  aria-controls={`contenuto-${s.id}`}
+                  aria-selected={pannello === s.id}
+                  className={`nav-link ${pannello === s.id ? "active" : ""} ${s.disabilitata ? "disabled" : ""}`}
+                  disabled={s.disabilitata}
+                  onClick={() => setPannello(s.id)}
+                >
+                  <Icona nome={s.icona} classe="icon-sm" />
+                  {s.etichetta}
+                </button>
+              </li>
             ))}
-          </Stack>
-        )}
-      </Tabs.Panel>
+          </ul>
 
-      <Tabs.Panel value="fermata" pt="sm">
-        {fermataSel && (
-          <Stack gap="sm">
-            <Group justify="space-between" wrap="nowrap" align="flex-start">
+          <div className="p-3" role="tabpanel" id={`contenuto-${pannello}`} aria-labelledby={`scheda-${pannello}`}>
+            {pannello === "vicino" &&
+              (!posizione ? (
+                <div>
+                  <h2 className="h5">Qual è la fermata più vicina?</h2>
+                  <p>
+                    Attiva la posizione: troviamo la fermata più vicina e ti diciamo se fai in tempo a prendere il
+                    prossimo bus, confrontando l'ora attuale con l'orario ufficiale.
+                  </p>
+                  <button type="button" className="btn btn-primary btn-icon w-100 justify-content-center" onClick={localizza} disabled={cercoPosizione}>
+                    <Icona nome="it-map-marker-circle" classe="icon-white" />
+                    <span>{cercoPosizione ? "Cerco la posizione…" : "Usa la mia posizione"}</span>
+                  </button>
+                  <p className="small text-muted mt-2 mb-0">
+                    <Icona nome="it-info-circle" classe="icon-xs" /> La posizione resta sul tuo dispositivo e serve
+                    solo a questo calcolo. In alternativa scegli una fermata sulla mappa o con la ricerca.
+                  </p>
+                </div>
+              ) : !vicine ? (
+                <div className="progress progress-indeterminate" role="progressbar" aria-label="Cerco le fermate vicine">
+                  <div className="progress-bar" />
+                </div>
+              ) : (
+                <div className="d-flex flex-column gap-3">
+                  <h2 className="h5 mb-0">Fermate vicino a te</h2>
+                  {vicine.map((v, i) => (
+                    <article
+                      key={v.id}
+                      className="card-fermata p-3"
+                      tabIndex={0}
+                      onClick={() => apriFermata(v.id)}
+                      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), apriFermata(v.id))}
+                      aria-label={`${v.nome}, ${v.distanza_m} metri: apri la fermata`}
+                    >
+                      <div className="d-flex justify-content-between gap-2 mb-2">
+                        <div>
+                          <span className="small text-muted text-uppercase">
+                            {i === 0 ? "Fermata più vicina" : "Alternativa"}
+                          </span>
+                          <h3 className="h6 mb-0">{v.nome}</h3>
+                        </div>
+                        <div className="text-end text-nowrap">
+                          <strong className="d-block tabular">
+                            {v.distanza_m < 1000 ? `${v.distanza_m} m` : `${(v.distanza_m / 1000).toFixed(1).replace(".", ",")} km`}
+                          </strong>
+                          <span className="small text-muted">{v.a_piedi_min} min a piedi</span>
+                        </div>
+                      </div>
+                      <Partenze partenze={v.partenze} oggi={oggi} aPiediMin={v.a_piedi_min} onCorsa={setCorsaEvidenziata} />
+                    </article>
+                  ))}
+                </div>
+              ))}
+
+            {pannello === "fermata" && fermataSel && (
               <div>
-                <Group gap={6}>
+                <div className="d-flex align-items-center gap-2 mb-1">
                   {(fermataSel.linee ?? []).map((l) => {
                     const linea = linee.find((x) => x.id === l);
                     return (
-                      <Badge key={l} color={linea?.colore} radius="sm">
+                      <span key={l} className="badge badge-linea" style={{ background: linea?.colore }}>
                         {l}
-                      </Badge>
+                      </span>
                     );
                   })}
-                  <Text size="xs" c="dimmed">
-                    Area n. {fermataSel.codice}
-                  </Text>
-                </Group>
-                <Title order={4} mt={4}>
-                  {fermataSel.nome}
-                </Title>
-                <Text size="xs" c="dimmed">
-                  {fermataSel.descrizione}
-                </Text>
+                  <span className="small text-muted">Area n. {fermataSel.codice}</span>
+                </div>
+                <h2 className="h4 mb-1">{fermataSel.nome}</h2>
+                <p className="small text-muted">{fermataSel.descrizione}</p>
+                {fermataSel.provvisoria && (
+                  <div className="alert alert-warning py-2 small">
+                    Posizione sulla mappa provvisoria, in attesa di geocoding o sopralluogo.
+                  </div>
+                )}
+                {vicinaSel && (
+                  <p>
+                    Sei a <strong>{vicinaSel.distanza_m} m</strong>, circa <strong>{vicinaSel.a_piedi_min} min</strong>{" "}
+                    a piedi.
+                  </p>
+                )}
+                <h3 className="h5 mt-3">Prossimi passaggi</h3>
+                <Partenze partenze={partenze} oggi={oggi} aPiediMin={vicinaSel?.a_piedi_min} onCorsa={setCorsaEvidenziata} />
+                <hr className="my-4" />
+                <Recensioni
+                  tipo="fermata"
+                  id={fermataSel.id}
+                  etichette={info.etichette.fermata}
+                  titolo="Recensioni della fermata"
+                  onCambio={caricaFermate}
+                />
               </div>
-            </Group>
-            {fermataSel.provvisoria && (
-              <Alert variant="light" color="yellow" p="xs" icon={<IconInfoCircle size={16} />}>
-                Posizione sulla mappa provvisoria, in attesa di geocoding o sopralluogo.
-              </Alert>
             )}
-            {vicinaSel && (
-              <Text size="sm">
-                Sei a <b>{vicinaSel.distanza_m} m</b>, circa <b>{vicinaSel.a_piedi_min} min</b> a piedi.
-              </Text>
+
+            {pannello === "assistente" && info.assistente && (
+              <Assistente
+                esempi={info.esempi_assistente}
+                posizione={posizione}
+                onFermata={(id) => setSelezionata(id)}
+              />
             )}
-            <Title order={5}>Prossimi passaggi</Title>
-            <Partenze partenze={partenze} oggi={oggi} aPiediMin={vicinaSel?.a_piedi_min} onCorsa={setCorsaEvidenziata} />
-            <Divider />
-            <Recensioni
-              tipo="fermata"
-              id={fermataSel.id}
-              etichette={info.etichette.fermata}
-              titolo="Recensioni della fermata"
-              onCambio={caricaFermate}
-            />
-          </Stack>
-        )}
-      </Tabs.Panel>
 
-      {info.assistente && (
-        <Tabs.Panel value="assistente" pt="sm">
-          <Assistente esempi={info.esempi_assistente} posizione={posizione} ora={oraApi} onFermata={(id) => setSelezionata(id)} />
-        </Tabs.Panel>
-      )}
+            {pannello === "servizio" && (
+              <div className="d-flex flex-column gap-3">
+                <div className="card card-bg no-after">
+                  <div className="card-body p-3">
+                    <h2 className="h5 card-title mb-1">{info.agenzia}</h2>
+                    <p className="small mb-0">
+                      <Icona nome="it-telephone" classe="icon-xs" />{" "}
+                      <a href={`tel:${info.telefono.replace(/\s/g, "")}`}>{info.telefono}</a>
+                    </p>
+                    <p className="small text-muted mb-0">Versione orario {info.versione_feed}</p>
+                  </div>
+                </div>
+                <div className="select-wrapper">
+                  <label htmlFor="valuta">Cosa vuoi valutare</label>
+                  <select id="valuta" value={valutazione} onChange={(e) => setValutazione(e.currentTarget.value)}>
+                    <option value="generale">Il servizio in generale</option>
+                    {linee.map((l) => (
+                      <option key={l.id} value={`linea:${l.id}`}>
+                        {l.nome_esteso}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {valutazione === "generale" ? (
+                  <Recensioni tipo="servizio" id="generale" etichette={info.etichette.servizio} titolo="Recensioni del servizio" />
+                ) : (
+                  <Recensioni
+                    tipo="linea"
+                    id={valutazione.split(":")[1]}
+                    etichette={info.etichette.linea}
+                    titolo={`Recensioni · ${linee.find((l) => l.id === valutazione.split(":")[1])?.nome_esteso}`}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
 
-      <Tabs.Panel value="servizio" pt="sm">
-        <Stack gap="md">
-          <Paper withBorder p="sm" radius="md">
-            <Text fw={600}>{info.agenzia}</Text>
-            <Text size="sm" c="dimmed">
-              Tel. {info.telefono} · orario {info.versione_feed}
-            </Text>
-          </Paper>
-          <Select
-            label="Valuta"
-            data={[
-              { value: "generale", label: "Il servizio in generale" },
-              ...linee.map((l) => ({ value: `linea:${l.id}`, label: `${l.nome_esteso}` })),
-            ]}
-            onChange={(v) => setValutazione(v ?? "generale")}
-            value={valutazione}
-            allowDeselect={false}
-          />
-          {valutazione === "generale" ? (
-            <Recensioni tipo="servizio" id="generale" etichette={info.etichette.servizio} titolo="Recensioni del servizio" />
-          ) : (
-            <Recensioni
-              tipo="linea"
-              id={valutazione.split(":")[1]}
-              etichette={info.etichette.linea}
-              titolo={`Recensioni · ${linee.find((l) => l.id === valutazione.split(":")[1])?.nome_esteso}`}
-            />
-          )}
-        </Stack>
-      </Tabs.Panel>
-    </Tabs>
-  );
-
-  return (
-    <Box className="app">
-      <Mappa
-        info={info}
-        linee={linee}
-        fermate={fermate}
-        veicoli={veicoli}
-        lineeVisibili={lineeVisibili}
-        posizione={posizione}
-        selezionata={selezionata}
-        corsaEvidenziata={corsaEvidenziata}
-        onFermata={apriFermata}
-        centraSu={centraSu}
-      />
-
-      {/* intestazione */}
-      <Paper className="testata" shadow="md" radius="lg" p="xs">
-        <Group justify="space-between" wrap="nowrap" gap="xs">
-          <Group gap={8} wrap="nowrap">
-            <IconBus size={24} color="var(--mantine-color-blue-6)" />
-            <div>
-              <Text fw={700} lh={1.1} size="sm">
-                QuandoPassa <Text span size="xs" c="dimmed" fw={500} className="solo-desktop">· {info.servizio}</Text>
-              </Text>
-              <Text size="xs" c="dimmed" lh={1.1}>
-                {veicoli.length} bus in servizio · stima da orario
-              </Text>
+      <footer id="piede" className="it-footer">
+        <div className="it-footer-main">
+          <div className="container py-4">
+            <div className="row g-4">
+              <div className="col-md-6">
+                <h2 className="h5 text-white">{info.comune}</h2>
+                <p className="small text-white mb-1">{info.servizio}</p>
+                <p className="small text-white mb-0">
+                  Gestore: {info.agenzia} · tel. {info.telefono}
+                </p>
+              </div>
+              <div className="col-md-6">
+                <h2 className="h6 text-white">Come leggere i dati</h2>
+                <ul className="list-unstyled small text-white mb-3">
+                  {info.avvisi.map((a) => (
+                    <li key={a}>{a}</li>
+                  ))}
+                </ul>
+                <ul className="list-unstyled small mb-0">
+                  <li>
+                    <a className="text-white" href="https://form.agid.gov.it/">
+                      Dichiarazione di accessibilità
+                    </a>
+                  </li>
+                  <li>
+                    <a className="text-white" href="/api/docs">
+                      API aperte del servizio
+                    </a>
+                  </li>
+                </ul>
+              </div>
             </div>
-          </Group>
-          <Group gap={6} wrap="nowrap">
-            <Orologio adesso={adesso} simulato={simulato} simula={simula} />
-          </Group>
-        </Group>
-        <Group gap={6} mt={6} wrap="nowrap">
-          <Chip.Group multiple value={lineeVisibili} onChange={setLineeVisibili}>
-            <Group gap={6} wrap="nowrap">
-              {linee.map((l) => (
-                <Chip key={l.id} value={l.id} size="xs" color={l.colore} variant="filled">
-                  {l.nome_esteso}
-                </Chip>
-              ))}
-            </Group>
-          </Chip.Group>
-          <CercaFermata fermate={fermate} onScelta={apriFermata} />
-        </Group>
-      </Paper>
-
-      {nessunBus && (
-        <Paper className="avviso-servizio" shadow="sm" radius="md" p="xs">
-          <Group gap="xs" wrap="nowrap">
-            <IconClock size={16} />
-            <Text size="xs" style={{ flex: 1 }}>
-              Nessun bus in servizio ora.
-              {prossimaCorsa !== undefined
-                ? ` Prima corsa alle ${hhmmDaSecondi(prossimaCorsa)}.`
-                : info.prossima_corsa
-                  ? ` Prossima: ${info.prossima_corsa.partenza.slice(0, 10) === oggi ? "" : "il " + info.prossima_corsa.partenza.slice(8, 10) + "/" + info.prossima_corsa.partenza.slice(5, 7) + " "}alle ${hhmm(info.prossima_corsa.partenza)}.`
-                  : ""}
-            </Text>
-            <Button
-              size="compact-xs"
-              variant="light"
-              onClick={() => {
-                const giorno = info.prossima_corsa?.partenza.slice(0, 10) ?? oggi;
-                const ora = prossimaCorsa !== undefined ? hhmmDaSecondi(prossimaCorsa + 600) : "09:00";
-                simula(daLocale(`${prossimaCorsa !== undefined ? oggi : giorno}T${ora}`));
-              }}
-            >
-              Simula
-            </Button>
-          </Group>
-        </Paper>
-      )}
-
-      {/* pulsanti mappa */}
-      <Stack className="pulsanti-mappa" gap={8}>
-        <Tooltip label="La mia posizione" position="left">
-          <ActionIcon size="xl" radius="xl" variant="white" style={{ boxShadow: "var(--mantine-shadow-md)" }} onClick={localizza} loading={cercoPosizione} aria-label="La mia posizione">
-            <IconCurrentLocation size={22} color={posizione ? "var(--mantine-color-blue-6)" : undefined} />
-          </ActionIcon>
-        </Tooltip>
-        {mobile && !aperto && (
-          <ActionIcon size="xl" radius="xl" onClick={() => setAperto(true)} aria-label="Apri pannello">
-            <IconMessageChatbot size={22} />
-          </ActionIcon>
-        )}
-      </Stack>
-
-      {mobile ? (
-        <Drawer
-          opened={aperto}
-          onClose={() => setAperto(false)}
-          position="bottom"
-          size="62%"
-          withOverlay={false}
-          lockScroll={false}
-          trapFocus={false}
-          radius="lg"
-          title={<Text fw={600} size="sm">{titoloPannello(pannello)}</Text>}
-        >
-          {contenutoPannello}
-        </Drawer>
-      ) : (
-        <Paper className="pannello" shadow="lg" radius="lg" p="sm">
-          <ScrollArea h="100%" type="auto" offsetScrollbars>
-            {contenutoPannello}
-            <Stack gap={4} mt="md">
-              {info.avvisi.map((a) => (
-                <Text key={a} size="10px" c="dimmed">
-                  ⓘ {a}
-                </Text>
-              ))}
-            </Stack>
-          </ScrollArea>
-        </Paper>
-      )}
-    </Box>
+          </div>
+        </div>
+        <div className="it-footer-small-prints py-2">
+          <div className="container small text-white">
+            La posizione resta sul tuo dispositivo. Orari stimati dall'orario programmato (feed GTFS{" "}
+            {info.versione_feed}): verifica sempre alla fermata.
+          </div>
+        </div>
+      </footer>
+    </>
   );
 }
 
-function titoloPannello(p: Pannello) {
-  return { vicino: "Vicino a te", fermata: "Fermata", assistente: "Assistente", servizio: "Servizio" }[p];
-}
-
-function Orologio({ adesso, simulato, simula }: { adesso: Date; simulato: boolean; simula: (d: Date | null) => void }) {
-  const [valore, setValore] = useState("");
+/** Ora reale del servizio (Europe/Rome): le posizioni dei bus si aggiornano ogni secondo. */
+function Orologio({ adesso }: { adesso: Date }) {
   return (
-    <Popover position="bottom-end" withArrow shadow="md">
-      <Popover.Target>
-        <Badge
-          size="lg"
-          variant={simulato ? "filled" : "light"}
-          color={simulato ? "orange" : "blue"}
-          leftSection={<IconClock size={14} />}
-          style={{ cursor: "pointer", flexShrink: 0, overflow: "visible" }}
-          miw={simulato ? 96 : 76}
-        >
-          {oraLocale(adesso)}
-          {simulato ? " sim." : ""}
-        </Badge>
-      </Popover.Target>
-      <Popover.Dropdown>
-        <Stack gap="xs" w={220}>
-          <Text size="xs">
-            Le posizioni dei bus sono calcolate dall'orario. Puoi simulare un altro momento per vedere il servizio.
-          </Text>
-          <TextInput
-            type="datetime-local"
-            size="xs"
-            value={valore || isoLocale(adesso).slice(0, 16)}
-            onChange={(e) => setValore(e.currentTarget.value)}
-          />
-          <Group gap="xs" grow>
-            <Button size="xs" onClick={() => valore && simula(daLocale(valore))}>
-              Simula
-            </Button>
-            <Button size="xs" variant="light" leftSection={<IconX size={12} />} onClick={() => simula(null)} disabled={!simulato}>
-              Ora reale
-            </Button>
-          </Group>
-        </Stack>
-      </Popover.Dropdown>
-    </Popover>
+    <div className="ms-auto d-flex align-items-center gap-1 text-primary" aria-live="off">
+      <Icona nome="it-clock" classe="icon-sm icon-primary" />
+      <span className="visually-hidden">Ora attuale</span>
+      <time className="tabular fw-semibold" dateTime={isoLocale(adesso)}>
+        {oraLocale(adesso)}
+      </time>
+    </div>
   );
 }
 
 function CercaFermata({ fermate, onScelta }: { fermate: Fermata[]; onScelta: (id: string) => void }) {
+  const [testo, setTesto] = useState("");
+  const [aperto, setAperto] = useState(false);
+  const [attiva, setAttiva] = useState(0);
+  const norm = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const risultati = useMemo(() => {
+    const q = norm(testo.trim());
+    return fermate.filter((f) => !q || norm(`${f.codice} ${f.nome}`).includes(q)).slice(0, 12);
+  }, [fermate, testo]);
+
+  const scegli = (f: Fermata) => {
+    onScelta(f.id);
+    setTesto("");
+    setAperto(false);
+  };
+
   return (
-    <Select
-      size="xs"
-      placeholder="Cerca fermata"
-      searchable
-      clearable
-      leftSection={<IconMapPin size={14} />}
-      data={fermate.map((f) => ({ value: f.id, label: `${f.codice} · ${f.nome}` }))}
-      onChange={(v) => v && onScelta(v)}
-      value={null}
-      style={{ flex: 1, minWidth: 140 }}
-      nothingFoundMessage="Nessuna fermata"
-      comboboxProps={{ withinPortal: true }}
-    />
+    <div className="cerca">
+      <Icona nome="it-search" classe="icon-sm" />
+      <label htmlFor="cerca-fermata" className="visually-hidden">
+        Cerca una fermata
+      </label>
+      <input
+        id="cerca-fermata"
+        type="search"
+        className="form-control"
+        placeholder="Cerca fermata"
+        role="combobox"
+        aria-expanded={aperto && risultati.length > 0}
+        aria-controls="cerca-elenco"
+        aria-autocomplete="list"
+        aria-activedescendant={aperto && risultati[attiva] ? `cerca-${risultati[attiva].id}` : undefined}
+        autoComplete="off"
+        value={testo}
+        onChange={(e) => {
+          setTesto(e.currentTarget.value);
+          setAperto(true);
+          setAttiva(0);
+        }}
+        onFocus={() => setAperto(true)}
+        onBlur={() => setTimeout(() => setAperto(false), 150)}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown") (e.preventDefault(), setAttiva((a) => Math.min(a + 1, risultati.length - 1)));
+          else if (e.key === "ArrowUp") (e.preventDefault(), setAttiva((a) => Math.max(a - 1, 0)));
+          else if (e.key === "Enter" && risultati[attiva]) (e.preventDefault(), scegli(risultati[attiva]));
+          else if (e.key === "Escape") setAperto(false);
+        }}
+      />
+      {aperto && (
+        <ul id="cerca-elenco" className="cerca-elenco" role="listbox" aria-label="Fermate">
+          {risultati.length === 0 ? (
+            <li className="text-muted" aria-disabled="true">
+              Nessuna fermata
+            </li>
+          ) : (
+            risultati.map((f, i) => (
+              <li
+                key={f.id}
+                id={`cerca-${f.id}`}
+                role="option"
+                aria-selected={i === attiva}
+                onMouseDown={(e) => (e.preventDefault(), scegli(f))}
+              >
+                <span className="text-muted tabular me-2">{f.codice}</span>
+                {f.nome}
+              </li>
+            ))
+          )}
+        </ul>
+      )}
+    </div>
   );
 }

@@ -40,8 +40,13 @@ a regole, offline, e nessun dato esce dal server.
 `chiedi_assistente`, `recensioni`, `riepilogo_recensioni`. Facoltativi: `lascia_recensione` (con consenso della
 persona) e gli strumenti di moderazione per l'ufficio.
 
-**Simulazione dell'orario.** Fuori servizio (il servizio pilota è solo al mattino, lun-sab) l'orologio in alto
-permette di vedere la rete a qualsiasi ora; `DEMO_ORA` nel `.env` fa partire tutta l'app da un istante fisso.
+**Ora reale.** L'interfaccia segue sempre l'ora attuale (allineata a quella del server) e muove i bus secondo
+l'orario programmato. Il servizio pilota è solo al mattino, lun-sab: fuori orario la mappa mostra la prossima corsa.
+Solo per dimostrazioni, `DEMO_ORA` nel `.env` fa partire il server da un istante fisso (vuoto = ora reale).
+
+**Interfaccia.** Pagina responsive costruita con [Bootstrap Italia](https://italia.github.io/bootstrap-italia/)
+(Designers Italia), come Spazio Comune: header e footer istituzionali, Titillium Web e icone ospitati in locale,
+nessuna CDN di terzi. Da mobile mappa e informazioni stanno una sotto l'altra; da desktop affiancate.
 
 ## Avvio rapido
 
@@ -110,7 +115,7 @@ Quattro servizi in `docker-compose.yml`:
 
 - **app** (`api/` + `web/`): FastAPI con il motore GTFS (`gtfs.py`: calendario, posizioni stimate, partenze,
   fermate vicine, ricerca, percorsi diretti a piedi + bus), le recensioni (`feedback.py`, PostgreSQL) e
-  l'assistente (`assistente.py`); serve l'interfaccia React costruita con Vite, Mantine e Leaflet su
+  l'assistente (`assistente.py`); serve l'interfaccia React costruita con Vite, Bootstrap Italia e Leaflet su
   OpenStreetMap. L'interfaccia scarica una volta l'orario del giorno e anima i bus da sola.
 - **db**: PostgreSQL 17, solo rete interna.
 - **inference** (`inference/`): server OpenAI-compatibile con backend `rules` (offline) o `openai`
