@@ -1,22 +1,22 @@
 stop_id,stop_code,stop_name,stop_lat,stop_lon,stop_desc,wheelchair_boarding,posizione
-R01,01,Via Lagomagno (Mulino / parcheggio di scambio),40.802000,16.917000,Pensilina – Area di partenza della circolare; verificare spazio presso fermata.,0,provvisoria
-R02,02,Piazza Plebiscito,40.795455,16.923182,Pensilina – Nodo centrale; verificare compatibilità con arredo e sosta.,0,provvisoria
-R03,03,Corso Vittorio Emanuele / P.za dei Martiri,40.792955,16.920821,Pensilina – Centralità urbana; verificare viabilità e vincoli del centro.,0,provvisoria
-R04,04,Via Di Vittorio (Teatro Sacro Cuore),40.792000,16.917000,Pensilina – Servizio alle attività e ai residenti.,0,provvisoria
-R05,05,Via Federico Fellini – P.za Cinecittà (Seven),40.792955,16.913179,Pensilina – Intersezione funzionale A/B; polo commerciale. Conteggiata una sola volta.,0,provvisoria
-R06,06,Via Rossellini – Via Pastrone (ex Coop),40.795455,16.910818,Fermata leggera – Indicazione dell'assessore: lato muretti da verificare.,0,provvisoria
-R07,07,Via Fermi,40.798545,16.910818,Fermata leggera – Fermata di quartiere.,0,provvisoria
-R08,08,Via Paolo Cassano – P.za Distilleria (Autentico / ASL),40.801045,16.920821,Pensilina – Accesso ai servizi sanitari e collegamento con il centro.,0,provvisoria
-R09,09,Via Dentico (rotatoria cimitero),40.798545,16.923182,Pensilina – Servizio all'accesso principale del cimitero.,0,provvisoria
+R01,01,Via Lagomagno (Mulino / parcheggio di scambio),40.794232,16.915571,Pensilina – Area di partenza della circolare; verificare spazio presso fermata.,0,osm:Via Lagomagno
+R02,02,Piazza Plebiscito,40.798846,16.921685,Pensilina – Nodo centrale; verificare compatibilità con arredo e sosta.,0,osm:Piazza Plebiscito
+R03,03,Corso Vittorio Emanuele / P.za dei Martiri,40.800232,16.922757,Pensilina – Centralità urbana; verificare viabilità e vincoli del centro.,0,osm:incrocio:Vittorio Emanuele|Martiri
+R04,04,Via Di Vittorio (Teatro Sacro Cuore),40.804151,16.923468,Pensilina – Servizio alle attività e ai residenti.,0,osm:Via Giuseppe Di Vittorio
+R05,05,Via Federico Fellini – P.za Cinecittà (Seven),40.808892,16.922388,Pensilina – Intersezione funzionale A/B; polo commerciale. Conteggiata una sola volta.,0,osm:Via Federico Fellini
+R06,06,Via Rossellini – Via Pastrone (ex Coop),40.808248,16.922562,Fermata leggera – Indicazione dell'assessore: lato muretti da verificare.,0,osm:Via Roberto Rossellini
+R07,07,Via Fermi,40.804170,16.920711,Fermata leggera – Fermata di quartiere.,0,osm:Via Enrico Fermi
+R08,08,Via Paolo Cassano – P.za Distilleria (Autentico / ASL),40.798957,16.908208,Pensilina – Accesso ai servizi sanitari e collegamento con il centro.,0,osm:Via Paolo Cassano
+R09,09,Via Dentico (rotatoria cimitero),40.801275,16.911123,Pensilina – Servizio all'accesso principale del cimitero.,0,osm:Cimitero
 R10,10,Via La Villa (ingresso cimitero nuovo),40.801045,16.913179,Pensilina – Accessibilità al secondo ingresso cimiteriale.,0,provvisoria
-R11,11,Villaggio Azzurro,40.807000,16.933000,Pensilina – Attestamento di linea e area residenziale.,0,provvisoria
-R12,12,Via S. Pio da Pietrelcina,40.806196,16.936900,Fermata leggera – Servizio al quartiere; verifica spazio libero.,0,provvisoria
-R13,13,Coop / Piazzetta Padre Pio,40.804000,16.939755,Pensilina – Polo commerciale e utenza di prossimità.,0,provvisoria
+R11,11,Villaggio Azzurro,40.783468,16.933358,Pensilina – Attestamento di linea e area residenziale.,0,osm:Villaggio Azzurro
+R12,12,Via S. Pio da Pietrelcina,40.793085,16.924706,Fermata leggera – Servizio al quartiere; verifica spazio libero.,0,osm:Via San Pio da Pietrelcina
+R13,13,Coop / Piazzetta Padre Pio,40.796323,16.931871,Pensilina – Polo commerciale e utenza di prossimità.,0,osm:Piazzetta Padre Pio
 R14,14,P.za S. Filippo Neri,40.801000,16.940800,Fermata leggera – Prossimità a servizi di quartiere.,0,provvisoria
-R15,15,Via Moro (Liceo Scientifico / Stazione),40.798000,16.939755,Pensilina – Polo scolastico; interscambio pedonale verso ferrovia.,0,provvisoria
-R16,16,Via Terracini – Via Lombardi – Via Gronchi,40.795804,16.936900,Fermata leggera – Corridoio: fissare il punto esatto dopo sopralluogo.,0,provvisoria
-R17,17,Via Trattati di Roma – Via Luigi Einaudi (Palazzetto),40.795000,16.933000,Pensilina – Polo sportivo / scolastico.,0,provvisoria
-R18,18,Via dei Peuceti – Via Castellaneta – Via Gisotti,40.795804,16.929100,Fermata leggera – Corridoio servito: fissare punto esatto dopo sopralluogo.,0,provvisoria
-R19,19,Via A. Grippa – Via Vinci – Via Persico,40.798000,16.926245,Pensilina – Corridoio della zona produttiva: verificare punto puntuale.,0,provvisoria
-R20A,20,Via Federico II di Svevia (New Holland / Opel),40.801000,16.925200,Pensilina – Area 20 – lato zona produttiva (New Holland / Opel).,0,provvisoria
-R20B,20,Via Federico II di Svevia (San Vito / Orto Botanico),40.806196,16.929100,Pensilina – Area 20 – lato Villaggio Azzurro (San Vito / Orto Botanico).,0,provvisoria
+R15,15,Via Moro (Liceo Scientifico / Stazione),40.803263,16.930051,Pensilina – Polo scolastico; interscambio pedonale verso ferrovia.,0,osm:incrocio:Aldo Moro|De Nicola
+R16,16,Via Terracini – Via Lombardi – Via Gronchi,40.804715,16.929786,Fermata leggera – Corridoio: fissare il punto esatto dopo sopralluogo.,0,osm:incrocio:Lombardi|Gronchi
+R17,17,Via Trattati di Roma – Via Luigi Einaudi (Palazzetto),40.805104,16.931638,Pensilina – Polo sportivo / scolastico.,0,osm:incrocio:Trattati di Roma|Einaudi
+R18,18,Via dei Peuceti – Via Castellaneta – Via Gisotti,40.811594,16.930979,Fermata leggera – Corridoio servito: fissare punto esatto dopo sopralluogo.,0,osm:incrocio:Peuceti|Castellaneta
+R19,19,Via A. Grippa – Via Vinci – Via Persico,40.819489,16.930970,Pensilina – Corridoio della zona produttiva: verificare punto puntuale.,0,osm:incrocio:Grippa|Vinci
+R20A,20,Via Federico II di Svevia (New Holland / Opel),40.809944,16.925230,Pensilina – Area 20 – lato zona produttiva (New Holland / Opel).,0,osm:incrocio:Federico II|De Curtis
+R20B,20,Via Federico II di Svevia (San Vito / Orto Botanico),40.826129,16.930144,Pensilina – Area 20 – lato Villaggio Azzurro (San Vito / Orto Botanico).,0,osm:Via Federico II di Svevia

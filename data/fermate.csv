@@ -1,22 +1,22 @@
 stop_id,stop_code,stop_name,linee,tipologia,nota,ricerca,lat,lon,fonte
-R01,01,Via Lagomagno (Mulino / parcheggio di scambio),A,Pensilina,Area di partenza della circolare; verificare spazio presso fermata.,incrocio:Lagomagno|Mulino ; Via Lagomagno,,,
-R02,02,Piazza Plebiscito,A,Pensilina,Nodo centrale; verificare compatibilità con arredo e sosta.,Piazza Plebiscito,,,
-R03,03,Corso Vittorio Emanuele / P.za dei Martiri,A,Pensilina,Centralità urbana; verificare viabilità e vincoli del centro.,incrocio:Vittorio Emanuele|Martiri ; Piazza dei Martiri ; Corso Vittorio Emanuele,,,
-R04,04,Via Di Vittorio (Teatro Sacro Cuore),A,Pensilina,Servizio alle attività e ai residenti.,Teatro Sacro Cuore ; Via Giuseppe Di Vittorio,,,
-R05,05,Via Federico Fellini – P.za Cinecittà (Seven),A B,Pensilina,Intersezione funzionale A/B; polo commerciale. Conteggiata una sola volta.,incrocio:Fellini|Cinecitt ; Via Federico Fellini,,,
-R06,06,Via Rossellini – Via Pastrone (ex Coop),A,Fermata leggera,Indicazione dell'assessore: lato muretti da verificare.,incrocio:Rossellini|Pastrone ; Via Roberto Rossellini,,,
-R07,07,Via Fermi,A,Fermata leggera,Fermata di quartiere.,Via Enrico Fermi ; Via Fermi,,,
-R08,08,Via Paolo Cassano – P.za Distilleria (Autentico / ASL),A,Pensilina,Accesso ai servizi sanitari e collegamento con il centro.,incrocio:Cassano|Distilleria ; Piazza Distilleria ; Via Paolo Cassano,,,
-R09,09,Via Dentico (rotatoria cimitero),A,Pensilina,Servizio all'accesso principale del cimitero.,incrocio:Dentico|La Villa ; Cimitero ; Via Filippo Dentico,,,
+R01,01,Via Lagomagno (Mulino / parcheggio di scambio),A,Pensilina,Area di partenza della circolare; verificare spazio presso fermata.,incrocio:Lagomagno|Mulino ; Via Lagomagno,40.794232,16.915571,osm:Via Lagomagno
+R02,02,Piazza Plebiscito,A,Pensilina,Nodo centrale; verificare compatibilità con arredo e sosta.,Piazza Plebiscito,40.798846,16.921685,osm:Piazza Plebiscito
+R03,03,Corso Vittorio Emanuele / P.za dei Martiri,A,Pensilina,Centralità urbana; verificare viabilità e vincoli del centro.,incrocio:Vittorio Emanuele|Martiri ; Piazza dei Martiri ; Corso Vittorio Emanuele,40.800232,16.922757,osm:incrocio:Vittorio Emanuele|Martiri
+R04,04,Via Di Vittorio (Teatro Sacro Cuore),A,Pensilina,Servizio alle attività e ai residenti.,Teatro Sacro Cuore ; Via Giuseppe Di Vittorio,40.804151,16.923468,osm:Via Giuseppe Di Vittorio
+R05,05,Via Federico Fellini – P.za Cinecittà (Seven),A B,Pensilina,Intersezione funzionale A/B; polo commerciale. Conteggiata una sola volta.,incrocio:Fellini|Cinecitt ; Via Federico Fellini,40.808892,16.922388,osm:Via Federico Fellini
+R06,06,Via Rossellini – Via Pastrone (ex Coop),A,Fermata leggera,Indicazione dell'assessore: lato muretti da verificare.,incrocio:Rossellini|Pastrone ; Via Roberto Rossellini,40.808248,16.922562,osm:Via Roberto Rossellini
+R07,07,Via Fermi,A,Fermata leggera,Fermata di quartiere.,Via Enrico Fermi ; Via Fermi,40.80417,16.920711,osm:Via Enrico Fermi
+R08,08,Via Paolo Cassano – P.za Distilleria (Autentico / ASL),A,Pensilina,Accesso ai servizi sanitari e collegamento con il centro.,incrocio:Cassano|Distilleria ; Piazza Distilleria ; Via Paolo Cassano,40.798957,16.908208,osm:Via Paolo Cassano
+R09,09,Via Dentico (rotatoria cimitero),A,Pensilina,Servizio all'accesso principale del cimitero.,incrocio:Dentico|La Villa ; Cimitero ; Via Filippo Dentico,40.801275,16.911123,osm:Cimitero
 R10,10,Via La Villa (ingresso cimitero nuovo),A,Pensilina,Accessibilità al secondo ingresso cimiteriale.,Via La Villa,,,
-R11,11,Villaggio Azzurro,B,Pensilina,Attestamento di linea e area residenziale.,Villaggio Azzurro,,,
-R12,12,Via S. Pio da Pietrelcina,B,Fermata leggera,Servizio al quartiere; verifica spazio libero.,Via San Pio da Pietrelcina ; Via Padre Pio,,,
-R13,13,Coop / Piazzetta Padre Pio,B,Pensilina,Polo commerciale e utenza di prossimità.,Piazzetta Padre Pio ; Coop,,,
+R11,11,Villaggio Azzurro,B,Pensilina,Attestamento di linea e area residenziale.,Villaggio Azzurro,40.783468,16.933358,osm:Villaggio Azzurro
+R12,12,Via S. Pio da Pietrelcina,B,Fermata leggera,Servizio al quartiere; verifica spazio libero.,Via San Pio da Pietrelcina ; Via Padre Pio,40.793085,16.924706,osm:Via San Pio da Pietrelcina
+R13,13,Coop / Piazzetta Padre Pio,B,Pensilina,Polo commerciale e utenza di prossimità.,Piazzetta Padre Pio ; Coop,40.796323,16.931871,osm:Piazzetta Padre Pio
 R14,14,P.za S. Filippo Neri,B,Fermata leggera,Prossimità a servizi di quartiere.,Piazza San Filippo Neri,,,
-R15,15,Via Moro (Liceo Scientifico / Stazione),B,Pensilina,Polo scolastico; interscambio pedonale verso ferrovia.,incrocio:Aldo Moro|De Nicola ; Via Aldo Moro ; Stazione di Gioia del Colle,,,
-R16,16,Via Terracini – Via Lombardi – Via Gronchi,B,Fermata leggera,Corridoio: fissare il punto esatto dopo sopralluogo.,incrocio:Terracini|Lombardi ; incrocio:Lombardi|Gronchi ; Via Umberto Terracini,,,
-R17,17,Via Trattati di Roma – Via Luigi Einaudi (Palazzetto),B,Pensilina,Polo sportivo / scolastico.,incrocio:Trattati di Roma|Einaudi ; Via Trattati di Roma,,,
-R18,18,Via dei Peuceti – Via Castellaneta – Via Gisotti,B,Fermata leggera,Corridoio servito: fissare punto esatto dopo sopralluogo.,incrocio:Peuceti|Castellaneta ; incrocio:Peuceti|Gisotti ; Via dei Peuceti,,,
-R19,19,Via A. Grippa – Via Vinci – Via Persico,B,Pensilina,Corridoio della zona produttiva: verificare punto puntuale.,incrocio:Grippa|Vinci ; incrocio:Vinci|Persico ; Via Antonio Grippa,,,
-R20A,20,Via Federico II di Svevia (New Holland / Opel),B,Pensilina,Area 20 – lato zona produttiva (New Holland / Opel).,incrocio:Federico II|De Curtis ; Via Federico II di Svevia,,,
-R20B,20,Via Federico II di Svevia (San Vito / Orto Botanico),B,Pensilina,Area 20 – lato Villaggio Azzurro (San Vito / Orto Botanico).,Orto Botanico ; incrocio:Federico II|Villaggio Azzurro ; Via Federico II di Svevia,,,
+R15,15,Via Moro (Liceo Scientifico / Stazione),B,Pensilina,Polo scolastico; interscambio pedonale verso ferrovia.,incrocio:Aldo Moro|De Nicola ; Via Aldo Moro ; Stazione di Gioia del Colle,40.803263,16.930051,osm:incrocio:Aldo Moro|De Nicola
+R16,16,Via Terracini – Via Lombardi – Via Gronchi,B,Fermata leggera,Corridoio: fissare il punto esatto dopo sopralluogo.,incrocio:Terracini|Lombardi ; incrocio:Lombardi|Gronchi ; Via Umberto Terracini,40.804715,16.929786,osm:incrocio:Lombardi|Gronchi
+R17,17,Via Trattati di Roma – Via Luigi Einaudi (Palazzetto),B,Pensilina,Polo sportivo / scolastico.,incrocio:Trattati di Roma|Einaudi ; Via Trattati di Roma,40.805104,16.931638,osm:incrocio:Trattati di Roma|Einaudi
+R18,18,Via dei Peuceti – Via Castellaneta – Via Gisotti,B,Fermata leggera,Corridoio servito: fissare punto esatto dopo sopralluogo.,incrocio:Peuceti|Castellaneta ; incrocio:Peuceti|Gisotti ; Via dei Peuceti,40.811594,16.930979,osm:incrocio:Peuceti|Castellaneta
+R19,19,Via A. Grippa – Via Vinci – Via Persico,B,Pensilina,Corridoio della zona produttiva: verificare punto puntuale.,incrocio:Grippa|Vinci ; incrocio:Vinci|Persico ; Via Antonio Grippa,40.819489,16.93097,osm:incrocio:Grippa|Vinci
+R20A,20,Via Federico II di Svevia (New Holland / Opel),B,Pensilina,Area 20 – lato zona produttiva (New Holland / Opel).,incrocio:Federico II|De Curtis ; Via Federico II di Svevia,40.809944,16.92523,osm:incrocio:Federico II|De Curtis
+R20B,20,Via Federico II di Svevia (San Vito / Orto Botanico),B,Pensilina,Area 20 – lato Villaggio Azzurro (San Vito / Orto Botanico).,Orto Botanico ; incrocio:Federico II|Villaggio Azzurro ; Via Federico II di Svevia,40.826129,16.930144,osm:Via Federico II di Svevia
