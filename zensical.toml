@@ -1,0 +1,91 @@
+# Sito di documentazione (Zensical) pubblicato su GitHub Pages da .github/workflows/docs.yml
+#   zensical serve -a 127.0.0.1:8002   anteprima (l'app occupa già :8000)   oppure: make docs
+#   zensical build                     genera ./site
+
+[project]
+site_name = "QuandoPassa"
+site_description = "Il bus urbano sulla mappa, stimato dall'orario GTFS: fermata più vicina, bus in arrivo, assistente IA e server MCP"
+site_author = "Giuseppe Zileni"
+site_url = "https://gzileni.github.io/quandopassa/"
+repo_url = "https://github.com/gzileni/quandopassa"
+repo_name = "gzileni/quandopassa"
+edit_uri = "edit/main/docs/"
+copyright = "Proposta indipendente per il Comune di Gioia del Colle · codice EUPL-1.2 · posizioni dei bus stimate dall'orario"
+docs_dir = "docs"
+extra_css = ["stylesheets/extra.css"]
+
+nav = [
+  { "Home" = "index.md" },
+  { "Cittadini" = [
+    { "Usare QuandoPassa" = "cittadini.md" },
+  ] },
+  { "Comune" = [
+    { "Benefici per il Comune" = "comune.md" },
+    { "Il feed GTFS e le fermate" = "gtfs.md" },
+  ] },
+  { "Sviluppatori e IT" = [
+    { "Installazione" = "installazione.md" },
+    { "Configurazione (.env)" = "configurazione.md" },
+    { "Architettura e API" = "architettura.md" },
+    { "Intelligenza artificiale" = "intelligenza-artificiale.md" },
+    { "Server MCP" = "mcp.md" },
+    { "Video e demo" = "video.md" },
+  ] },
+]
+
+[project.theme]
+language = "it"
+features = [
+  "content.code.annotate",
+  "content.code.copy",
+  "content.tabs.link",
+  "content.tooltips",
+  "navigation.footer",
+  "navigation.tabs",
+  "navigation.tabs.sticky",
+  "content.action.edit",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.path",
+  "navigation.sections",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+  "toc.follow",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Passa al tema scuro"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Passa al tema chiaro"
+
+[project.markdown_extensions]
+abbr = {}
+admonition = {}
+attr_list = {}
+def_list = {}
+footnotes = {}
+md_in_html = {}
+tables = {}
+toc.permalink = true
+pymdownx.betterem = {}
+pymdownx.details = {}
+pymdownx.emoji.emoji_generator = "zensical.extensions.emoji.to_svg"
+pymdownx.emoji.emoji_index = "zensical.extensions.emoji.twemoji"
+pymdownx.highlight.anchor_linenums = true
+pymdownx.highlight.pygments_lang_class = true
+pymdownx.inlinehilite = {}
+pymdownx.keys = {}
+pymdownx.mark = {}
+pymdownx.superfences.custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+pymdownx.tabbed.alternate_style = true
+pymdownx.tasklist.custom_checkbox = true

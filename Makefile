@@ -7,7 +7,7 @@ GTFS    ?= data
 S       ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help env build build-nocache up up-llm down restart ps logs shell test gtfs geocode clean
+.PHONY: help env build build-nocache up up-llm down restart ps logs shell test gtfs geocode demo video docs clean
 
 help: ## Mostra questo elenco
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
@@ -51,6 +51,21 @@ gtfs: ## Rigenera i file GTFS .txt da fermate.csv e percorsi.json
 geocode: ## Geocoding fermate + tracciati stradali, poi rigenera il GTFS
 	$(PYTHON) scripts/geocode_stops.py $(GTFS) --forme
 	$(PYTHON) scripts/build_gtfs.py $(GTFS)
+
+demo: env ## Istanza demo su :8001 con orologio fisso (mercoledì 11/11/2026, 09:00)
+	$(COMPOSE) --profile demo up -d --build demo
+	@echo "demo: http://localhost:8001"
+
+video: ## Video 16:9 e 9:16 e screenshot in docs/ (serve make demo, playwright e ffmpeg)
+	$(COMPOSE) --profile demo restart demo && sleep 4
+	$(PYTHON) scripts/registra_demo.py
+	$(COMPOSE) --profile demo restart demo && sleep 4
+	$(PYTHON) scripts/registra_demo.py --verticale
+	$(COMPOSE) --profile demo restart demo && sleep 4
+	$(PYTHON) scripts/registra_demo.py --screenshot
+
+docs: ## Anteprima del sito di documentazione su http://127.0.0.1:8002 (serve zensical)
+	zensical serve -a 127.0.0.1:8002
 
 clean: ## ATTENZIONE: ferma tutto e cancella i volumi (modelli Ollama)
 	$(COMPOSE) --profile llm --profile test down -v --remove-orphans

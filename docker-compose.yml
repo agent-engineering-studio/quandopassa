@@ -3,6 +3,7 @@
 #   cp .env.example .env
 #   docker compose up --build                     app + server di inferenza (rules, offline) + server MCP
 #   docker compose --profile llm up --build       + LLM locale con Ollama (modello piccolo, CPU)
+#   docker compose --profile demo up --build -d   + istanza demo su :8001 (orologio fisso, per i video)
 #   docker compose --profile test run --rm test   suite pytest
 #
 # Il feed GTFS è la cartella indicata da GTFS_DIR nel .env, montata in sola lettura.
@@ -23,6 +24,24 @@ services:
       inference:
         condition: service_healthy
     restart: unless-stopped
+
+  # istanza demo (profilo "demo"): orologio fisso su un mercoledì mattina, quando circolano A e B.
+  # Serve per video e presentazioni fuori dall'orario di servizio; l'app principale resta sull'ora reale.
+  demo:
+    container_name: quandopassa-demo
+    build: .
+    profiles: ["demo"]
+    ports: ["8001:8000"]
+    env_file: [.env]
+    environment:
+      GTFS_DIR: /srv/gtfs
+      INFERENCE_URL: http://inference:8080
+      DEMO_ORA: ${DEMO_ORA_ISTANZA_DEMO:-2026-11-11T09:00:00}
+    volumes:
+      - ${GTFS_DIR:-./data}:/srv/gtfs:ro
+    depends_on:
+      inference:
+        condition: service_healthy
 
   inference:
     container_name: quandopassa-inference

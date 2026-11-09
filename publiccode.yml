@@ -2,6 +2,7 @@
 publiccodeYmlVersion: "0.4"
 name: QuandoPassa
 url: "https://github.com/agent-engineering-studio/quandopassa.git"
+landingURL: "https://gzileni.github.io/quandopassa/"
 releaseDate: "2026-11-09"
 softwareVersion: "0.1.0"
 platforms: [web]
@@ -21,6 +22,11 @@ description:
       trova la fermata più vicina all'utente confrontando l'ora attuale con l'orario e il tempo a piedi, e indica
       se si fa in tempo a prendere il prossimo passaggio. Un assistente IA risponde in italiano su orari e percorsi
       calcolandoli dall'orario ufficiale; un server MCP espone gli stessi dati ad agenti esterni.
+    documentation: "https://gzileni.github.io/quandopassa/"
+    screenshots:
+      - docs/screenshot/01_mappa.png
+      - docs/screenshot/03_fermata.png
+      - docs/screenshot/06_mobile.png
     features:
       - Posizione dei bus stimata dall'orario GTFS, animata lungo il tracciato
       - Fermata più vicina con minuti a piedi e indicazione "fai in tempo"

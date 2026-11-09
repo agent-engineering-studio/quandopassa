@@ -1,0 +1,21 @@
+/* Colori Designers Italia / Bootstrap Italia, come l'app */
+:root, [data-md-color-scheme="default"] {
+  --md-primary-fg-color: #0066cc;
+  --md-primary-fg-color--light: #3385d6;
+  --md-primary-fg-color--dark: #00264d;
+  --md-accent-fg-color: #ffb400;
+}
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #0b3a6b;
+  --md-accent-fg-color: #ffb400;
+}
+.md-typeset video.video-demo { height: auto; width: 100%; border-radius: 10px; box-shadow: 0 8px 30px rgba(0, 38, 77, .25); }
+.md-typeset video.video-verticale { width: 320px; max-width: 100%; height: auto; display: block; margin: 0 auto 1.5rem; border-radius: 18px;
+  box-shadow: 0 8px 30px rgba(0, 38, 77, .25); }
+.hero { padding: 1.2rem 1.4rem; border-radius: 12px; color: #fff;
+  background: linear-gradient(135deg, #0066cc, #00264d); margin-bottom: 1.5rem; }
+.hero h1 { color: #fff; margin-bottom: .4rem; }
+.hero p { margin: .3rem 0; font-size: 1.05em; }
+.screens img { border: 1px solid rgba(0, 0, 0, .08); border-radius: 8px; }
+.md-typeset img.telefono { width: 300px; max-width: 100%; display: block; margin: 0 auto; border-radius: 18px;
+  box-shadow: 0 8px 30px rgba(0, 38, 77, .2); }
