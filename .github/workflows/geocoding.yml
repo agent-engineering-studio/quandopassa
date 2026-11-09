@@ -6,15 +6,15 @@ on:
   push:
     branches: [main]
     paths:
-      - "data/gtfs/*/fermate.csv"
-      - "data/gtfs/*/percorsi.json"
+      - "data/fermate.csv"
+      - "data/percorsi.json"
       - "scripts/geocode_stops.py"
       - "scripts/build_gtfs.py"
   workflow_dispatch:
     inputs:
       cartella:
         description: Cartella GTFS
-        default: data/gtfs/resta
+        default: data
       tutte:
         description: Rifai tutte le fermate (tranne fonte=manuale)
         type: boolean
@@ -29,7 +29,7 @@ jobs:
   geocoding:
     runs-on: ubuntu-latest
     env:
-      CARTELLA: ${{ inputs.cartella || 'data/gtfs/resta' }}
+      CARTELLA: ${{ inputs.cartella || 'data' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

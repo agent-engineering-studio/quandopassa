@@ -38,7 +38,7 @@ from quandopassa.gtfs import Orario  # noqa: E402
 from quandopassa.main import create_app  # noqa: E402
 
 ROMA = ZoneInfo("Europe/Rome")
-GTFS = RADICE / "data" / "gtfs" / "resta"
+GTFS = RADICE / "data"
 # mercoledì 11/11/2026: circolano A e B
 MERCOLEDI_9 = datetime(2026, 11, 11, 9, 5, tzinfo=ROMA)
 

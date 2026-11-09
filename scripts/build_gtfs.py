@@ -1,6 +1,6 @@
 """Genera i file GTFS di una cartella a partire da fermate.csv e percorsi.json.
 
-    python scripts/build_gtfs.py data/gtfs/resta
+    python scripts/build_gtfs.py data
 
 Input (nella cartella):
   fermate.csv     anagrafica delle fermate con coordinate (colonne lat/lon/fonte, vedi geocode_stops.py)
@@ -139,5 +139,5 @@ def costruisci(cartella: Path) -> dict:
 
 
 if __name__ == "__main__":
-    dest = Path(sys.argv[1] if len(sys.argv) > 1 else "data/gtfs/resta")
+    dest = Path(sys.argv[1] if len(sys.argv) > 1 else "data")
     print(json.dumps(costruisci(dest), ensure_ascii=False))

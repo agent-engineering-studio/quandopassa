@@ -38,7 +38,7 @@ services:
       INFERENCE_URL: http://inference:8080
       DATABASE_URL: ${DATABASE_URL:-postgresql://quandopassa:${POSTGRES_PASSWORD:-quandopassa-dev}@db:5432/quandopassa}
     volumes:
-      - ${GTFS_DIR:-./data/gtfs/resta}:/srv/gtfs:ro
+      - ${GTFS_DIR:-./data}:/srv/gtfs:ro
     depends_on:
       db:
         condition: service_healthy

@@ -69,10 +69,10 @@ oppure `docker compose --profile test run --rm test`.
 La cartella del feed è nel `.env`:
 
 ```dotenv
-GTFS_DIR=./data/gtfs/resta
+GTFS_DIR=./data
 ```
 
-`data/gtfs/resta` contiene il feed generato dalla proposta delle 20 aree (Circolari A e B, documento del
+`data` contiene il feed generato dalla proposta delle 20 aree (Circolari A e B, documento del
 9/11/2026). Le sorgenti modificabili a mano sono due:
 
 - `fermate.csv`: le fermate (area, nome, linee, tipologia pensilina/fermata leggera, nota, strategia di
@@ -86,8 +86,8 @@ perché la Circolare B la percorre prima e dopo Seven. La Circolare A ordinaria 
 mercato, con un percorso diverso che la proposta non copre).
 
 ```bash
-python scripts/build_gtfs.py data/gtfs/resta          # rigenera i file .txt
-python scripts/geocode_stops.py data/gtfs/resta --forme  # geocoding + tracciati stradali
+python scripts/build_gtfs.py data          # rigenera i file .txt
+python scripts/geocode_stops.py data --forme  # geocoding + tracciati stradali
 ```
 
 **Geocoding.** Per ogni fermata `geocode_stops.py` prova in ordine le strategie della colonna `ricerca`:
@@ -101,7 +101,7 @@ fissati con il sopralluogo. Dopo il rilievo basta scrivere `lat`, `lon` e `fonte
 geocoding non tocca più quella riga. Finché una fermata non ha coordinate, l'app la mostra in posizione
 provvisoria con il bordo tratteggiato e un avviso.
 
-Un altro Comune può usare qualsiasi feed GTFS esistente: basta copiarlo in `data/gtfs/<nome>` e cambiare
+Un altro Comune può usare qualsiasi feed GTFS esistente: basta copiarlo in una cartella (es. `data/altro`) e cambiare
 `GTFS_DIR` (le colonne extra di questo repository sono facoltative).
 
 ## Architettura

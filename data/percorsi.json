@@ -1,5 +1,5 @@
 {
-  "_nota": "Sorgente dei file GTFS di questa cartella. Fermate: le 20 aree della proposta di localizzazione pensiline (Circolari A e B, 9/11/2026). Sequenza e minuti di percorrenza: dal template GTFS Sabato Viaggi (orari ufficiali), tenendo solo le fermate della proposta. Rigenerare con: python scripts/build_gtfs.py data/gtfs/resta",
+  "_nota": "Sorgente dei file GTFS di questa cartella. Fermate: le 20 aree della proposta di localizzazione pensiline (Circolari A e B, 9/11/2026). Sequenza e minuti di percorrenza: dal template GTFS Sabato Viaggi (orari ufficiali), tenendo solo le fermate della proposta. Rigenerare con: python scripts/build_gtfs.py data",
   "agency": {
     "agency_id": "SABATO",
     "agency_name": "Sabato Viaggi – Servizio urbano Gioia del Colle",

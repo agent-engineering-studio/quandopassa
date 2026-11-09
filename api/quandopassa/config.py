@@ -13,14 +13,14 @@ def _env(nome: str, predefinito: str = "") -> str:
 
 
 def _cartella(nome: str, predefinito: str) -> Path:
-    """Percorsi relativi (es. GTFS_DIR=./data/gtfs/resta nel .env) sono relativi alla radice del repository."""
+    """Percorsi relativi (es. GTFS_DIR=./data nel .env) sono relativi alla radice del repository."""
     p = Path(_env(nome, predefinito))
     return p if p.is_absolute() else (RADICE / p).resolve()
 
 
 @dataclass(frozen=True)
 class Config:
-    gtfs_dir: Path = field(default_factory=lambda: _cartella("GTFS_DIR", "data/gtfs/resta"))
+    gtfs_dir: Path = field(default_factory=lambda: _cartella("GTFS_DIR", "data"))
     fuso: str = field(default_factory=lambda: _env("TZ_SERVIZIO", "Europe/Rome"))
     database_url: str = field(default_factory=lambda: _env("DATABASE_URL"))
     database_schema: str = field(default_factory=lambda: _env("DATABASE_SCHEMA"))

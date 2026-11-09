@@ -1,8 +1,8 @@
 """Geocoding delle fermate (OpenStreetMap) e tracciati stradali delle linee.
 
-    python scripts/geocode_stops.py data/gtfs/resta            # solo fermate senza coordinate
-    python scripts/geocode_stops.py data/gtfs/resta --tutte    # rifà tutte tranne fonte=manuale
-    python scripts/geocode_stops.py data/gtfs/resta --forme    # + tracciati stradali (OSRM) in forme.json
+    python scripts/geocode_stops.py data            # solo fermate senza coordinate
+    python scripts/geocode_stops.py data --tutte    # rifà tutte tranne fonte=manuale
+    python scripts/geocode_stops.py data --forme    # + tracciati stradali (OSRM) in forme.json
 
 Per ogni fermata la colonna `ricerca` di fermate.csv elenca le strategie, separate da " ; ",
 provate in ordine fino al primo risultato dentro il territorio comunale:
@@ -154,7 +154,7 @@ def forme(cartella: Path) -> None:
 
 
 def main(argv: list[str]) -> None:
-    cartella = Path(next((a for a in argv if not a.startswith("--")), "data/gtfs/resta"))
+    cartella = Path(next((a for a in argv if not a.startswith("--")), "data"))
     tutte = "--tutte" in argv
     file = cartella / "fermate.csv"
     with file.open(encoding="utf-8") as f:

@@ -17,7 +17,7 @@ RUN pip install -r requirements.txt
 COPY api/quandopassa/ quandopassa/
 COPY --from=web /web/dist/ web/
 # feed predefinito dentro l'immagine; docker compose monta la cartella indicata da GTFS_DIR nel .env
-COPY data/gtfs/resta/ /srv/gtfs/
+COPY data/ /srv/gtfs/
 RUN useradd --system --uid 10001 quandopassa
 USER quandopassa
 EXPOSE 8000
