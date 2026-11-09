@@ -3,8 +3,7 @@
 **Il bus urbano sulla mappa, come su Google Maps, senza mettere un GPS sui bus.**
 QuandoPassa legge l'orario ufficiale in formato GTFS, lo confronta con l'ora attuale e con la posizione del
 telefono e mostra dove si trova ogni bus *secondo l'orario*, qual è la fermata più vicina e se fai in tempo
-a prenderlo. Include un assistente IA, le recensioni dei cittadini su fermate e servizio e un server MCP per
-collegare agenti esterni. Open source (EUPL-1.2), riusabile da qualsiasi Comune con un feed GTFS.
+a prenderlo. Include un assistente IA e un server MCP per collegare agenti esterni. Open source (EUPL-1.2), riusabile da qualsiasi Comune con un feed GTFS.
 
 Pilota: servizio urbano di **Gioia del Colle**, Circolari A e B, con le 20 aree della proposta preliminare di
 localizzazione delle pensiline.
@@ -24,11 +23,6 @@ fermata con l'orario previsto.
 **Vicino a te.** Con la posizione del telefono trova le fermate più vicine, stima i minuti a piedi e per ogni
 passaggio dice "fai in tempo (+4 min)", "affrettati" o "non fai in tempo". La posizione resta sul dispositivo.
 
-**Fermate e recensioni stile Google Maps.** Stelle da 1 a 5, distribuzione dei voti, etichette (pensilina,
-illuminata, puntuale, affollata…), commenti e una sintesi automatica. Si valutano le fermate, le linee e il
-servizio. Nessun account, nessun dato personale: email e telefoni scritti nel testo vengono rimossi e dell'IP
-resta solo un'impronta giornaliera per il limite anti-spam. L'ufficio può nascondere le recensioni fuori tema.
-
 **Assistente IA.** "Quando passa il prossimo bus da Piazza Plebiscito?", "Come arrivo al cimitero?",
 "Dov'è adesso la linea B?". Come in [Spazio Comune](https://github.com/agent-engineering-studio/spazio-comune),
 il server di inferenza *capisce* la frase, l'app *calcola* la risposta dall'orario e un LLM, se configurato,
@@ -37,8 +31,7 @@ a regole, offline, e nessun dato esce dal server.
 
 **Server MCP.** Gli stessi dati come strumenti per Claude, Copilot o qualsiasi orchestratore agentico:
 `cerca_fermata`, `fermate_vicine`, `prossime_partenze`, `bus_in_servizio`, `come_arrivare`, `orari_linea`,
-`chiedi_assistente`, `recensioni`, `riepilogo_recensioni`. Facoltativi: `lascia_recensione` (con consenso della
-persona) e gli strumenti di moderazione per l'ufficio.
+`chiedi_assistente`. Solo lettura: l'MCP non conosce segreti e non scrive nulla.
 
 **Ora reale.** L'interfaccia segue sempre l'ora attuale (allineata a quella del server) e muove i bus secondo
 l'orario programmato. Il servizio pilota è solo al mattino, lun-sab: fuori orario la mappa mostra la prossima corsa.
@@ -66,8 +59,7 @@ pip install -r api/requirements.txt -r inference/requirements.txt
 (cd web && npm install && npm run dev)        # http://localhost:5173
 ```
 
-Senza `DATABASE_URL` le recensioni stanno in memoria. Test: `pytest` (con `TEST_DATABASE_URL` anche su PostgreSQL)
-oppure `docker compose --profile test run --rm test`.
+Nessun database: l'app non salva dati delle persone. Test: `pytest` oppure `make test`.
 
 ## Il feed GTFS
 
@@ -111,15 +103,13 @@ Un altro Comune può usare qualsiasi feed GTFS esistente: basta copiarlo in una 
 
 ## Architettura
 
-Quattro servizi in `docker-compose.yml`:
+Tre servizi in `docker-compose.yml`:
 
 - **app** (`api/` + `web/`): FastAPI con il motore GTFS (`gtfs.py`: calendario, posizioni stimate, partenze,
-  fermate vicine, ricerca, percorsi diretti a piedi + bus), le recensioni (`feedback.py`, PostgreSQL) e
-  l'assistente (`assistente.py`); serve l'interfaccia React costruita con Vite, Bootstrap Italia e Leaflet su
+  fermate vicine, ricerca, percorsi diretti a piedi + bus) e l'assistente (`assistente.py`); serve l'interfaccia React costruita con Vite, Bootstrap Italia e Leaflet su
   OpenStreetMap. L'interfaccia scarica una volta l'orario del giorno e anima i bus da sola.
-- **db**: PostgreSQL 17, solo rete interna.
 - **inference** (`inference/`): server OpenAI-compatibile con backend `rules` (offline) o `openai`
-  (Ollama del profilo `llm`, vLLM, Azure OpenAI…). Endpoint `/v1/tasks/intent`, `/answer`, `/faq`, `/summary`.
+  (Ollama del profilo `llm`, vLLM, Azure OpenAI…). Endpoint `/v1/tasks/intent`, `/answer`, `/faq`.
 - **mcp** (`mcp_server/`): server MCP (stdio o HTTP streamable) che usa solo le API HTTP dell'app.
 
 Per collegare l'MCP a Claude Desktop o Claude Code in stdio:

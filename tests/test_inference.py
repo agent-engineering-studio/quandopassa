@@ -11,7 +11,6 @@ def test_intenti():
         "voglio andare alla stazione": ("percorso", "stazione"),
         "dov'è adesso la linea B?": ("dove_bus", None),
         "fermata più vicina": ("vicina", None),
-        "Com'è la fermata di Piazza Plebiscito?": ("recensioni", "piazza plebiscito"),
         "orari della circolare A": ("orari_linea", None),
         "quanto costa il biglietto": ("info", None),
         "a che ora passa la B a villaggio azzurro": ("prossimo", "villaggio azzurro"),
@@ -29,8 +28,7 @@ def test_endpoint_rules_offline():
     assert c.get("/health").json()["backend"] == "rules"
     r = c.post("/v1/tasks/answer", json={"domanda": "x", "intento": "prossimo", "bozza": "Linea A alle 9:10."}).json()
     assert r == {"risposta": "Linea A alle 9:10.", "backend": "rules", "generato_da_ia": False}
-    s = c.post("/v1/tasks/summary", json={"oggetto": "Seven", "recensioni": [{"voto": 5, "tag": ["pensilina"]}]}).json()
-    assert "Seven" in s["sintesi"] and s["generato_da_ia"] is False
+    assert c.post("/v1/tasks/summary", json={"oggetto": "Seven", "recensioni": []}).status_code == 404
 
 
 def test_controllo_numeri_riformulazione():

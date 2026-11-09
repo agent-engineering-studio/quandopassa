@@ -22,12 +22,7 @@ def _cartella(nome: str, predefinito: str) -> Path:
 class Config:
     gtfs_dir: Path = field(default_factory=lambda: _cartella("GTFS_DIR", "data"))
     fuso: str = field(default_factory=lambda: _env("TZ_SERVIZIO", "Europe/Rome"))
-    database_url: str = field(default_factory=lambda: _env("DATABASE_URL"))
-    database_schema: str = field(default_factory=lambda: _env("DATABASE_SCHEMA"))
     inference_url: str = field(default_factory=lambda: _env("INFERENCE_URL"))
-    secret_key: str = field(default_factory=lambda: _env("SECRET_KEY", "sviluppo-non-usare-in-produzione"))
-    ufficio_user: str = field(default_factory=lambda: _env("UFFICIO_USER"))
-    ufficio_password: str = field(default_factory=lambda: _env("UFFICIO_PASSWORD"))
     base_url: str = field(default_factory=lambda: _env("BASE_URL", "http://localhost:8000").rstrip("/"))
     comune: str = field(default_factory=lambda: _env("COMUNE_NOME", "Comune di Gioia del Colle"))
     servizio: str = field(default_factory=lambda: _env("SERVIZIO_NOME", "Bus urbano di Gioia del Colle"))

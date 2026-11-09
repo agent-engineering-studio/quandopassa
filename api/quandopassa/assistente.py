@@ -2,7 +2,7 @@
 
 Divisione dei compiti (come in Spazio Comune):
   - il server di inferenza CAPISCE la frase (intento, luogo, linea, ora);
-  - l'app CALCOLA la risposta dai dati (orario, posizione, recensioni) e scrive una bozza;
+  - l'app CALCOLA la risposta dai dati (orario, posizione) e scrive una bozza;
   - un LLM, se configurato, può solo RIFORMULARE la bozza con i dati forniti.
 Così orari e minuti non sono mai inventati dal modello.
 """
@@ -12,7 +12,6 @@ from datetime import datetime, time
 
 from .ai import ClientIA, base_conoscenza
 from .config import Config
-from .feedback import Archivio
 from .gtfs import Orario
 
 ESEMPI = [
@@ -20,7 +19,7 @@ ESEMPI = [
     "Come arrivo al cimitero?",
     "Dov'è adesso la linea B?",
     "Orari della circolare A",
-    "Com'è la fermata di Piazza Plebiscito?",
+    "Quanto costa il biglietto?",
 ]
 
 
@@ -53,8 +52,8 @@ def _quando(iso: str, ora: datetime) -> str:
 
 
 class Assistente:
-    def __init__(self, cfg: Config, orario: Orario, archivio: Archivio, ia: ClientIA):
-        self.cfg, self.orario, self.archivio, self.ia = cfg, orario, archivio, ia
+    def __init__(self, cfg: Config, orario: Orario, ia: ClientIA):
+        self.cfg, self.orario, self.ia = cfg, orario, ia
 
     def rispondi(self, testo: str, ora: datetime, lat: float | None = None, lon: float | None = None) -> dict:
         intento = self.ia.interpreta(testo)
@@ -75,7 +74,7 @@ class Assistente:
 
         gestore = {
             "vicina": self._vicina, "prossimo": self._prossimo, "dove_bus": self._dove_bus,
-            "percorso": self._percorso, "orari_linea": self._orari_linea, "recensioni": self._recensioni,
+            "percorso": self._percorso, "orari_linea": self._orari_linea,
         }.get(tipo)
         if gestore:
             bozza, dati = gestore(intento=intento, fermata=fermata, posizione=posizione, ora=istante)
@@ -199,23 +198,6 @@ class Assistente:
         if not frasi:
             return f"Non conosco la linea {intento.get('linea')}. Linee: {', '.join(self.orario.linee)}.", {}
         return " ".join(frasi), dati
-
-    def _recensioni(self, fermata, intento, **_):
-        if fermata is not None:
-            tipo, oid, nome = "fermata", fermata["id"], fermata["nome"]
-        elif intento.get("linea") and intento["linea"].upper() in self.orario.linee:
-            tipo, oid = "linea", intento["linea"].upper()
-            nome = self.orario.linee[oid].nome_esteso
-        else:
-            tipo, oid, nome = "servizio", "generale", "il servizio"
-        r = self.archivio.riepilogo(tipo, oid)
-        if not r["conteggio"]:
-            return f"Non ci sono ancora recensioni su {nome}. Puoi lasciare la prima dalla mappa.", {"riepilogo": r}
-        tag = ", ".join(t["tag"] for t in r["tag"][:3])
-        bozza = f"{nome}: {str(r['media']).replace('.', ',')} su 5 da {r['conteggio']} recensioni."
-        if tag:
-            bozza += f" Le più citate: {tag}."
-        return bozza, {"riepilogo": r, "tipo": tipo, "oggetto_id": oid}
 
     def _faq(self, testo: str):
         r = self.ia.faq(testo, base_conoscenza(self.cfg, self.orario))

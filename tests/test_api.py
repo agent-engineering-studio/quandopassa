@@ -26,46 +26,6 @@ def test_fermate_vicine_con_partenze(client, orario):
     assert client.get("/api/v1/fermate/NOPE").status_code == 404
 
 
-def test_recensioni_ciclo_completo(client):
-    corpo = {"tipo": "fermata", "id": "R02", "voto": 2, "testo": "Senza riparo. Scrivetemi a mario@example.com",
-             "tag": ["senza riparo", "inventata"], "autore": "Mario"}
-    r = client.post("/api/v1/recensioni", json=corpo)
-    assert r.status_code == 201
-    rec = r.json()
-    assert "example.com" not in rec["testo"] and rec["tag"] == ["senza riparo"]
-    client.post("/api/v1/recensioni", json={**corpo, "voto": 4, "tag": ["pensilina"], "testo": ""})
-    rr = client.get("/api/v1/recensioni", params={"tipo": "fermata", "id": "R02"}).json()
-    assert rr["riepilogo"]["conteggio"] == 2 and rr["riepilogo"]["media"] == 3.0
-    s = client.get("/api/v1/recensioni/riepilogo", params={"tipo": "fermata", "id": "R02"}).json()
-    assert "Piazza Plebiscito" in s["sintesi"]["sintesi"]
-    medie = {f["id"]: f["recensioni"] for f in client.get("/api/v1/fermate").json()}
-    assert medie["R02"]["conteggio"] == 2
-
-
-def test_recensioni_validazione(client):
-    assert client.post("/api/v1/recensioni", json={"tipo": "fermata", "id": "R02", "voto": 6}).status_code == 422
-    assert client.post("/api/v1/recensioni", json={"tipo": "fermata", "id": "NOPE", "voto": 3}).status_code == 404
-    assert client.post("/api/v1/recensioni", json={"tipo": "servizio", "id": "generale", "voto": 5}).status_code == 201
-    assert client.post("/api/v1/recensioni", json={"tipo": "linea", "id": "A", "voto": 5}).status_code == 201
-
-
-def test_limite_anti_spam(client):
-    for _ in range(5):
-        assert client.post("/api/v1/recensioni", json={"tipo": "linea", "id": "B", "voto": 3}).status_code == 201
-    r = client.post("/api/v1/recensioni", json={"tipo": "linea", "id": "B", "voto": 3})
-    assert r.status_code == 422 and "un'ora" in r.json()["errore"]
-
-
-def test_moderazione_ufficio(client):
-    rid = client.post("/api/v1/recensioni", json={"tipo": "fermata", "id": "R05", "voto": 1, "testo": "x"}).json()["id"]
-    assert client.get("/api/v1/ufficio/recensioni").status_code == 401
-    assert client.post(f"/api/v1/ufficio/recensioni/{rid}/nascondi", auth=("ufficio", "sbagliata")).status_code == 401
-    assert client.post(f"/api/v1/ufficio/recensioni/{rid}/nascondi", auth=("ufficio", "segreta")).status_code == 200
-    assert client.get("/api/v1/recensioni", params={"tipo": "fermata", "id": "R05"}).json()["recensioni"] == []
-    tutte = client.get("/api/v1/ufficio/recensioni", auth=("ufficio", "segreta")).json()
-    assert tutte[0]["nascosta"] is True
-
-
 def test_assistente(client, orario):
     q = lambda testo, **kw: client.get("/api/v1/assistente", params={"testo": testo, "ora": MERCOLEDI_9.isoformat(), **kw}).json()
     r = q("quando passa il prossimo bus da Piazza Plebiscito?")
@@ -82,11 +42,11 @@ def test_assistente(client, orario):
     assert q("ghjkl")["intento"] == "sconosciuto"
 
 
-def test_assistente_spento_se_inference_giu(cfg, archivio):
+def test_assistente_spento_se_inference_giu(cfg):
     from fastapi.testclient import TestClient
     from quandopassa.ai import ClientIA
     from quandopassa.main import create_app
-    c = TestClient(create_app(cfg, archivio, ClientIA("http://127.0.0.1:9")))
+    c = TestClient(create_app(cfg, ClientIA("http://127.0.0.1:9")))
     assert c.get("/api/v1/assistente", params={"testo": "prossimo bus"}).status_code == 503
     assert c.get("/api/v1/info").json()["assistente"] is False
     assert c.get("/api/v1/veicoli").status_code == 200  # il resto funziona

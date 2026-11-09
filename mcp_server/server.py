@@ -5,11 +5,7 @@ passando dalle sue API HTTP: non legge il database e non conosce i segreti dell'
 
 Strumenti per tutti:
   info_servizio, cerca_fermata, fermate_vicine, prossime_partenze, bus_in_servizio,
-  come_arrivare, orari_linea, chiedi_assistente, recensioni, riepilogo_recensioni
-Strumento di scrittura (solo con MCP_RECENSIONI_SCRITTURA=true):
-  lascia_recensione  – l'agente deve avere il consenso esplicito della persona
-Strumenti per l'ufficio (solo con QUANDOPASSA_UFFICIO_USER/PASSWORD):
-  ultime_recensioni, modera_recensione
+  come_arrivare, orari_linea, chiedi_assistente
 
     python mcp_server/server.py                         # stdio (Claude Desktop, Claude Code, IDE)
     MCP_TRANSPORT=http python mcp_server/server.py      # HTTP streamable su :8090/mcp
@@ -26,7 +22,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 
 ISTRUZIONI = (
     "Strumenti per il bus urbano di Gioia del Colle: fermate, prossimi passaggi, bus in servizio, percorsi a piedi + "
-    "bus, orari delle linee e recensioni dei cittadini. Le posizioni dei bus sono STIMATE dall'orario programmato "
+    "bus e orari delle linee. Le posizioni dei bus sono STIMATE dall'orario programmato "
     "(GTFS), non da GPS: dillo quando riporti dove si trova un bus. Orari in fuso Europe/Rome. Non chiedere né "
     "inviare dati personali; la posizione della persona usala solo per la richiesta in corso."
 )
@@ -39,18 +35,14 @@ class ErroreApp(Exception):
 class ClientApp:
     """Chiamate alle API di QuandoPassa; gli errori diventano messaggi leggibili per l'agente."""
 
-    def __init__(self, base_url: str, client: httpx.Client | None = None,
-                 ufficio: tuple[str, str] | None = None, timeout: float = 10.0):
+    def __init__(self, base_url: str, client: httpx.Client | None = None, timeout: float = 10.0):
         self.base_url = base_url.rstrip("/")
-        self.ufficio = ufficio
         self._http = client or httpx.Client(timeout=timeout)
 
-    def _richiesta(self, metodo: str, percorso: str, riservato: bool = False, json: dict | None = None,
-                   **params: Any) -> Any:
+    def get(self, percorso: str, **params: Any) -> Any:
         params = {k: v for k, v in params.items() if v is not None}
         try:
-            r = self._http.request(metodo, f"{self.base_url}{percorso}", params=params, json=json,
-                                   auth=self.ufficio if riservato else None)
+            r = self._http.get(f"{self.base_url}{percorso}", params=params)
         except httpx.HTTPError as e:
             raise ErroreApp(f"QuandoPassa non raggiungibile su {self.base_url}: {e}") from None
         if r.status_code >= 400:
@@ -62,26 +54,10 @@ class ClientApp:
             raise ErroreApp(f"Errore {r.status_code}: {messaggio}")
         return r.json()
 
-    def get(self, percorso: str, riservato: bool = False, **params: Any) -> Any:
-        return self._richiesta("GET", percorso, riservato, **params)
 
-    def post(self, percorso: str, json: dict | None = None, riservato: bool = False) -> Any:
-        return self._richiesta("POST", percorso, riservato, json=json)
-
-
-def _tipo(tipo: str) -> str:
-    if tipo not in ("fermata", "linea", "servizio"):
-        raise ErroreApp("tipo deve essere fermata, linea o servizio")
-    return tipo
-
-
-def crea_server(app: ClientApp | None = None, scrittura: bool | None = None) -> FastMCP:
+def crea_server(app: ClientApp | None = None) -> FastMCP:
     if app is None:
-        user, pwd = os.getenv("QUANDOPASSA_UFFICIO_USER"), os.getenv("QUANDOPASSA_UFFICIO_PASSWORD")
-        app = ClientApp(os.getenv("QUANDOPASSA_URL", "http://localhost:8000"),
-                        ufficio=(user, pwd) if user and pwd else None)
-    if scrittura is None:
-        scrittura = os.getenv("MCP_RECENSIONI_SCRITTURA", "false").lower() in ("1", "true", "si", "yes")
+        app = ClientApp(os.getenv("QUANDOPASSA_URL", "http://localhost:8000"))
     consentiti = [h.strip() for h in os.getenv("MCP_ALLOWED_HOSTS", "localhost:*,127.0.0.1:*").split(",") if h.strip()]
     mcp = FastMCP(
         "quandopassa", instructions=ISTRUZIONI, host=os.getenv("MCP_HOST", "127.0.0.1"),
@@ -137,36 +113,6 @@ def crea_server(app: ClientApp | None = None, scrittura: bool | None = None) -> 
         """Domanda in italiano all'assistente del servizio (es. "come arrivo al cimitero?"). La risposta è
         calcolata sull'orario ufficiale; passa lat/lon se la persona ha condiviso la posizione."""
         return app.get("/api/v1/assistente", testo=domanda[:500], lat=lat, lon=lon)
-
-    @mcp.tool()
-    def recensioni(tipo: str, id: str = "generale", n: int = 10) -> dict:
-        """Recensioni dei cittadini. tipo: fermata (id fermata), linea (id linea) o servizio (id "generale")."""
-        return app.get("/api/v1/recensioni", tipo=_tipo(tipo), id=id, n=max(1, min(n, 50)))
-
-    @mcp.tool()
-    def riepilogo_recensioni(tipo: str, id: str = "generale") -> dict:
-        """Media, distribuzione delle stelle, etichette più citate e sintesi (IA o regole) delle recensioni."""
-        return app.get("/api/v1/recensioni/riepilogo", tipo=_tipo(tipo), id=id)
-
-    if scrittura:
-        @mcp.tool()
-        def lascia_recensione(tipo: str, id: str, voto: int, testo: str = "", tag: list[str] | None = None) -> dict:
-            """Pubblica una recensione anonima PER CONTO della persona, solo dopo che ti ha confermato voto e testo.
-            Etichette ammesse: vedi info_servizio().etichette[tipo]. Niente dati personali nel testo."""
-            return app.post("/api/v1/recensioni", {"tipo": _tipo(tipo), "id": id, "voto": voto, "testo": testo[:1000],
-                                                   "tag": tag or [], "autore": "via assistente"})
-
-    if app.ufficio:
-        @mcp.tool()
-        def ultime_recensioni(n: int = 50) -> list[dict]:
-            """[Ufficio] Ultime recensioni, comprese quelle nascoste, per moderazione e analisi."""
-            return app.get("/api/v1/ufficio/recensioni", riservato=True, n=max(1, min(n, 500)))
-
-        @mcp.tool()
-        def modera_recensione(id: str, nascondi: bool = True) -> dict:
-            """[Ufficio] Nasconde (o rende di nuovo visibile) una recensione offensiva o fuori tema."""
-            return app.post(f"/api/v1/ufficio/recensioni/{quote(id)}/{'nascondi' if nascondi else 'mostra'}",
-                            riservato=True)
 
     return mcp
 

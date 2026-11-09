@@ -14,18 +14,16 @@ intendedAudience:
   countries: [it]
 description:
   it:
-    shortDescription: Bus urbano sulla mappa stimato dall'orario GTFS, fermata più vicina, recensioni e assistente IA
+    shortDescription: Bus urbano sulla mappa stimato dall'orario GTFS, fermata più vicina e assistente IA
     longDescription: >
       Applicazione web per il trasporto pubblico urbano dei piccoli Comuni che non hanno un sistema AVM/GPS a
       bordo. A partire dal feed GTFS statico mostra sulla mappa OpenStreetMap la posizione stimata di ogni bus,
       trova la fermata più vicina all'utente confrontando l'ora attuale con l'orario e il tempo a piedi, e indica
-      se si fa in tempo a prendere il prossimo passaggio. I cittadini possono valutare fermate, linee e servizio
-      con recensioni anonime moderate dall'ufficio. Un assistente IA risponde in italiano su orari e percorsi
+      se si fa in tempo a prendere il prossimo passaggio. Un assistente IA risponde in italiano su orari e percorsi
       calcolandoli dall'orario ufficiale; un server MCP espone gli stessi dati ad agenti esterni.
     features:
       - Posizione dei bus stimata dall'orario GTFS, animata lungo il tracciato
       - Fermata più vicina con minuti a piedi e indicazione "fai in tempo"
-      - Recensioni anonime di fermate, linee e servizio con sintesi automatica
       - Assistente IA con backend offline deterministico e LLM opzionale
       - Server MCP per l'integrazione con assistenti e agenti
       - Geocoding delle fermate e tracciati stradali da OpenStreetMap

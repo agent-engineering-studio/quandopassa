@@ -13,7 +13,7 @@ help: ## Mostra questo elenco
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
 
 env: ## Crea .env da .env.example (se manca)
-	@test -f .env && echo ".env esiste già" || (cp .env.example .env && chmod 600 .env && echo "creato .env: rivedere segreti e password")
+	@test -f .env && echo ".env esiste già" || (cp .env.example .env && chmod 600 .env && echo "creato .env: rivedere i valori")
 
 build: env ## Costruisce le immagini (app, inference, mcp)
 	$(COMPOSE) build
@@ -21,8 +21,8 @@ build: env ## Costruisce le immagini (app, inference, mcp)
 build-nocache: env ## Costruisce le immagini senza cache
 	$(COMPOSE) build --no-cache --pull
 
-up: env ## Avvia app + database + inferenza + MCP (http://localhost:8000)
-	$(COMPOSE) up -d --build --force-recreate
+up: env ## Avvia app + inferenza + MCP (http://localhost:8000)
+	$(COMPOSE) up -d --build --force-recreate --remove-orphans
 	@echo "app: http://localhost:8000   MCP: http://localhost:8090/mcp"
 
 up-llm: env ## Come up, con LLM locale Ollama (profilo llm)
@@ -42,7 +42,7 @@ logs: ## Log in tempo reale (tutti, o S=app)
 shell: ## Shell in un container (S=app predefinito)
 	$(COMPOSE) exec $(or $(S),app) sh
 
-test: env ## Suite pytest nel container (anche su PostgreSQL)
+test: env ## Suite pytest nel container
 	$(COMPOSE) --profile test run --rm --build test
 
 gtfs: ## Rigenera i file GTFS .txt da fermate.csv e percorsi.json
@@ -52,5 +52,5 @@ geocode: ## Geocoding fermate + tracciati stradali, poi rigenera il GTFS
 	$(PYTHON) scripts/geocode_stops.py $(GTFS) --forme
 	$(PYTHON) scripts/build_gtfs.py $(GTFS)
 
-clean: ## ATTENZIONE: ferma tutto e cancella i volumi (recensioni e modelli Ollama)
+clean: ## ATTENZIONE: ferma tutto e cancella i volumi (modelli Ollama)
 	$(COMPOSE) --profile llm --profile test down -v --remove-orphans

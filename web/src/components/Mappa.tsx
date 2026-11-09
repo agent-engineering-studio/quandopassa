@@ -122,7 +122,6 @@ export default function Mappa(p: Props) {
                 <strong>{f.nome}</strong>
                 <br />
                 Linee {(f.linee ?? []).join(", ")}
-                {f.recensioni ? ` · ★ ${f.recensioni.media.toFixed(1)} (${f.recensioni.conteggio})` : ""}
                 {f.provvisoria ? <><br /><em>posizione provvisoria</em></> : null}
               </Tooltip>
             </CircleMarker>

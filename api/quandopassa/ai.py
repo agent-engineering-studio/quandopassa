@@ -1,7 +1,7 @@
 """Client del server di inferenza e base di conoscenza del servizio.
 
 Se il server di inferenza non risponde l'app funziona lo stesso: l'assistente si spegne,
-mappa, orari e recensioni restano (degrado controllato, come in Spazio Comune).
+mappa e orari restano (degrado controllato, come in Spazio Comune).
 """
 from __future__ import annotations
 
@@ -32,11 +32,7 @@ def base_conoscenza(cfg: Config, orario: Orario) -> list[dict]:
                   "non circola il martedì (giorno di mercato, con un percorso diverso)."},
         {"id": "contatti", "titolo": "Contatti telefono azienda reclamo segnalazione oggetti smarriti",
          "testo": f"Azienda: {info['agenzia']}, telefono {info['telefono']}. Per segnalazioni sulle fermate o sul "
-                  "servizio puoi anche lasciare una recensione nell'app: l'ufficio le legge."},
-        {"id": "recensioni", "titolo": "Recensione valutazione stelle opinione feedback commento privacy",
-         "testo": "Puoi valutare ogni fermata, ogni linea e il servizio con 1-5 stelle, etichette e un commento. "
-                  "Non serve registrarsi e non chiediamo dati personali; email e telefoni scritti nel testo "
-                  "vengono rimossi automaticamente."},
+                  "servizio contatta l'azienda o l'Ufficio Trasporti del Comune."},
         {"id": "fermate_nuove", "titolo": "Pensiline nuove fermate proposta localizzazione progetto",
          "testo": "Le fermate mostrate sono le 20 aree della proposta preliminare di localizzazione delle pensiline "
                   "(Circolari A e B). Le posizioni sono indicative e saranno verificate con sopralluogo."},
@@ -84,6 +80,3 @@ class ClientIA:
 
     def faq(self, domanda: str, documenti: list[dict]) -> dict | None:
         return self._post("/v1/tasks/faq", {"domanda": domanda, "documenti": documenti})
-
-    def sintesi(self, oggetto: str, recensioni: list[dict]) -> dict | None:
-        return self._post("/v1/tasks/summary", {"oggetto": oggetto, "recensioni": recensioni})

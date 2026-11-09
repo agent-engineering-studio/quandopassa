@@ -7,7 +7,6 @@ Endpoint:
   POST /v1/tasks/intent        frase -> {intento, luogo, linea, ora}
   POST /v1/tasks/answer        dati calcolati dall'app + bozza -> risposta in italiano semplice
   POST /v1/tasks/faq           domanda + documenti -> risposta fondata solo sui documenti
-  POST /v1/tasks/summary       recensioni -> sintesi in 2-3 frasi
 
 Backend (INFERENCE_BACKEND):
   rules   (predefinito) deterministico, offline, nessun dato esce dal container
@@ -80,17 +79,6 @@ class FaqIn(BaseModel):
     documenti: list[Documento] = Field(..., min_length=1, max_length=50)
 
 
-class Recensione(BaseModel):
-    voto: int = Field(..., ge=1, le=5)
-    testo: str = ""
-    tag: list[str] = Field(default_factory=list)
-
-
-class SummaryIn(BaseModel):
-    oggetto: str = Field(..., min_length=1, max_length=200)
-    recensioni: list[Recensione] = Field(..., max_length=100)
-
-
 class Messaggio(BaseModel):
     role: str
     content: str
@@ -115,7 +103,7 @@ def _llm(messaggi: list[dict], json_mode: bool = False, max_tokens: int = 300) -
 
 PROMPT_INTENT = (
     "Sei il parser dell'assistente del bus urbano di un piccolo Comune italiano. Dalla frase estrai un JSON con: "
-    "intento (vicina|prossimo|dove_bus|percorso|orari_linea|recensioni|info|sconosciuto), "
+    "intento (vicina|prossimo|dove_bus|percorso|orari_linea|info|sconosciuto), "
     "luogo (nome di fermata, via o luogo citato, o null), linea (lettera maiuscola o null), "
     "ora (HH:MM o null). Rispondi solo con JSON valido."
 )
@@ -128,12 +116,6 @@ PROMPT_FAQ = (
     "Sei l'assistente del bus urbano del Comune. Rispondi in italiano semplice, massimo 3 frasi, usando SOLO i "
     "documenti forniti. Se la risposta non c'è, rispondi esattamente: NON_PRESENTE. Non inventare tariffe o orari."
 )
-PROMPT_SUMMARY = (
-    "Riassumi in massimo 3 frasi neutre le recensioni dei cittadini su una fermata o linea del bus urbano: "
-    "giudizio complessivo, punti di forza, criticità ricorrenti. Non citare persone, non inventare fatti, "
-    "ignora insulti e dati personali."
-)
-
 _NUMERI = re.compile(r"\d{1,2}[:.]\d{2}|\d+")
 
 
@@ -213,22 +195,6 @@ def faq(body: FaqIn):
     except Exception as e:  # noqa: BLE001
         log.warning("LLM faq non disponibile: %s", e)
         return {**base, "backend": "rules", "generato_da_ia": False}
-
-
-@app.post("/v1/tasks/summary")
-def summary(body: SummaryIn):
-    recensioni = [r.model_dump() for r in body.recensioni]
-    base = rules.sintesi_recensioni(body.oggetto, recensioni)
-    if BACKEND != "openai" or len(recensioni) < 3 or not any(r["testo"].strip() for r in recensioni):
-        return {"sintesi": base, "backend": "rules", "generato_da_ia": False}
-    elenco = "\n".join(f"- {r['voto']}/5 [{', '.join(r['tag'])}] {redigi(r['testo'])[:300]}" for r in recensioni[:30])
-    try:
-        testo = _llm([{"role": "system", "content": PROMPT_SUMMARY},
-                      {"role": "user", "content": f"Oggetto: {body.oggetto}\nRecensioni:\n{elenco}"}], max_tokens=200)
-        return {"sintesi": testo.strip(), "statistiche": base, "backend": f"openai:{LLM_MODEL}", "generato_da_ia": True}
-    except Exception as e:  # noqa: BLE001
-        log.warning("LLM summary non disponibile: %s", e)
-        return {"sintesi": base, "backend": "rules", "generato_da_ia": False}
 
 
 @app.post("/v1/chat/completions")

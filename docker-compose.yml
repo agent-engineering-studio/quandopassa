@@ -1,33 +1,14 @@
 # QuandoPassa: il bus urbano sulla mappa, stimato dall'orario GTFS (senza GPS a bordo).
 #
 #   cp .env.example .env
-#   docker compose up --build                     app + database + server di inferenza (rules, offline) + server MCP
+#   docker compose up --build                     app + server di inferenza (rules, offline) + server MCP
 #   docker compose --profile llm up --build       + LLM locale con Ollama (modello piccolo, CPU)
-#   docker compose --profile test run --rm test   suite pytest (anche su PostgreSQL)
+#   docker compose --profile test run --rm test   suite pytest
 #
 # Il feed GTFS è la cartella indicata da GTFS_DIR nel .env, montata in sola lettura.
 name: quandopassa
 
-x-database-url: &database-url postgresql://quandopassa:${POSTGRES_PASSWORD:-quandopassa-dev}@db:5432/quandopassa
-
 services:
-  db:
-    container_name: quandopassa-db
-    image: postgres:17.6-alpine
-    environment:
-      POSTGRES_DB: quandopassa
-      POSTGRES_USER: quandopassa
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quandopassa-dev}
-      TZ: Europe/Rome
-    volumes: ["pgdati:/var/lib/postgresql/data"]
-    expose: ["5432"]
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U quandopassa -d quandopassa"]
-      interval: 5s
-      timeout: 3s
-      retries: 20
-    restart: unless-stopped
-
   app:
     container_name: quandopassa-app
     build: .
@@ -36,12 +17,9 @@ services:
     environment:
       GTFS_DIR: /srv/gtfs
       INFERENCE_URL: http://inference:8080
-      DATABASE_URL: ${DATABASE_URL:-postgresql://quandopassa:${POSTGRES_PASSWORD:-quandopassa-dev}@db:5432/quandopassa}
     volumes:
       - ${GTFS_DIR:-./data}:/srv/gtfs:ro
     depends_on:
-      db:
-        condition: service_healthy
       inference:
         condition: service_healthy
     restart: unless-stopped
@@ -67,9 +45,6 @@ services:
     environment:
       QUANDOPASSA_URL: http://app:8000
       MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-localhost:*,127.0.0.1:*}
-      MCP_RECENSIONI_SCRITTURA: ${MCP_RECENSIONI_SCRITTURA:-false}
-      QUANDOPASSA_UFFICIO_USER: ${MCP_UFFICIO_USER:-}
-      QUANDOPASSA_UFFICIO_PASSWORD: ${MCP_UFFICIO_PASSWORD:-}
     depends_on: [app]
     restart: unless-stopped
 
@@ -95,12 +70,6 @@ services:
       context: .
       dockerfile: tests.Dockerfile
     profiles: ["test"]
-    environment:
-      TEST_DATABASE_URL: *database-url
-    depends_on:
-      db:
-        condition: service_healthy
 
 volumes:
-  pgdati:
   modelli:

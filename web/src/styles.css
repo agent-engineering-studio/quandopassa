@@ -84,18 +84,18 @@ html, body { overflow-x: hidden; }
 .esito-no { background: #fbe9eb; color: #a01b2a; }
 .imminente { color: #a65c00; }
 
+/* bus in arrivo alla fermata */
+.in-arrivo-card { display: block; border: 2px solid #0066cc; border-radius: 4px; background: #f2f7fc; padding: .75rem 1rem; }
+.in-arrivo-card:hover, .in-arrivo-card:focus-visible { background: #e3eefa; }
+.in-arrivo-icona { display: inline-flex; flex-direction: column; align-items: center; justify-content: center;
+  width: 3.25rem; height: 3.25rem; border-radius: 50%; color: #fff; flex-shrink: 0; line-height: 1; font-size: .85rem; }
+.in-arrivo-minuti { display: block; font-size: 1.75rem; font-weight: 700; line-height: 1.1; color: #17324d; }
+
 /* assistente */
 .chat { max-height: 380px; overflow-y: auto; }
 .fumetto { max-width: 85%; padding: .5rem .75rem; border-radius: 4px; }
 .fumetto-utente { background: #0066cc; color: #fff; margin-left: auto; }
 .fumetto-assistente { background: #f2f7fc; border-left: 4px solid #0066cc; }
-
-/* recensioni */
-.stelle { display: inline-flex; gap: 2px; }
-.stelle .icon { fill: #d9a300; width: 1rem; height: 1rem; }
-.voto-input button { background: none; border: 0; padding: 2px; }
-.voto-input .icon { width: 2rem; height: 2rem; fill: #d9a300; }
-.media-voto { font-size: 2.25rem; font-weight: 700; line-height: 1; }
 
 .notifiche { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 2000; width: min(480px, calc(100vw - 32px)); }
 

@@ -12,6 +12,18 @@ export interface Veicolo {
   prossima: number; // indice della prossima fermata nella corsa
   arrivoProssima: number; // secondi dalla mezzanotte
   avanzamento: number;
+  metri: number; // metri percorsi lungo il tracciato
+  secondi: number; // istante del calcolo, nella stessa scala di arrivi/partenze della corsa
+  tracciato: Tracciato;
+}
+
+export interface BusInArrivo {
+  veicolo: Veicolo;
+  arrivo: number; // secondi dalla mezzanotte
+  minuti: number;
+  giaInFermata: boolean;
+  fermateIntermedie: number; // fermate prima di questa (0 = è la prossima)
+  metriMancanti: number;
 }
 
 const rad = (g: number) => (g * Math.PI) / 180;
@@ -85,9 +97,36 @@ export function veicoliAl(orario: OrarioGiorno, t: number): Veicolo[] {
       prossima,
       arrivoProssima: c.arrivi[prossima],
       avanzamento: (tt - c.partenze[0]) / Math.max(1, c.arrivi[c.arrivi.length - 1] - c.partenze[0]),
+      metri: d,
+      secondi: tt,
+      tracciato: tr,
     });
   }
   return out;
+}
+
+/**
+ * Bus già in viaggio che devono ancora passare dalla fermata, dal più vicino: minuti stimati dall'orario
+ * e distanza lungo il percorso. Nelle circolari la fermata può comparire due volte: conta il primo passaggio utile.
+ */
+export function busInArrivo(veicoli: Veicolo[], fermataId: string): BusInArrivo[] {
+  const out: BusInArrivo[] = [];
+  for (const v of veicoli) {
+    const c = v.corsa;
+    const giaQui = v.stato === "in_fermata" && c.fermate[Math.max(0, v.prossima - 1)] === fermataId;
+    const da = giaQui ? v.prossima - 1 : v.prossima;
+    const idx = c.fermate.findIndex((f, i) => i >= da && f === fermataId);
+    if (idx < 0) continue;
+    out.push({
+      veicolo: v,
+      arrivo: c.arrivi[idx],
+      minuti: Math.max(0, Math.round((c.arrivi[idx] - v.secondi) / 60)),
+      giaInFermata: giaQui,
+      fermateIntermedie: giaQui ? 0 : Math.max(0, idx - v.prossima),
+      metriMancanti: Math.max(0, v.tracciato.distanze_fermate[idx] - v.metri),
+    });
+  }
+  return out.sort((a, b) => a.arrivo - a.veicolo.secondi - (b.arrivo - b.veicolo.secondi));
 }
 
 export const hhmmDaSecondi = (s: number) => {

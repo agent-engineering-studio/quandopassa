@@ -1,4 +1,4 @@
-"""Backend deterministico (nessun modello): intenti in italiano sul bus urbano, FAQ, sintesi recensioni.
+"""Backend deterministico (nessun modello): intenti in italiano sul bus urbano e FAQ.
 
 È il backend predefinito: gira ovunque, non invia dati a terzi e rende i test riproducibili.
 Un LLM, se configurato, interviene solo quando le regole non bastano e viene comunque
@@ -11,7 +11,7 @@ import re
 import unicodedata
 from collections import Counter
 
-INTENTI = ("vicina", "prossimo", "dove_bus", "percorso", "orari_linea", "recensioni", "info", "sconosciuto")
+INTENTI = ("vicina", "prossimo", "dove_bus", "percorso", "orari_linea", "info", "sconosciuto")
 STOP = set("il lo la i gli le un una di a da in con su per tra fra e o che non si ci mi ti come quanto quanti "
            "quando dove cosa qual quale e sono del della dei delle al alla ai alle nel nella posso devo "
            "voglio vorrei serve servono mio mia".split())
@@ -71,11 +71,7 @@ def _luogo(t: str, schema: str) -> str | None:
 def estrai_intento(testo: str) -> dict:
     t = normalizza(testo)
     out = {"intento": "sconosciuto", "luogo": None, "linea": _linea(t), "ora": _ora(t), "confidenza": 0.0}
-    if re.search(r"\b(recension|valutazion|stelle|opinion|giudizi|com'? ?e (?:la|il)|come e la fermata|come si trova|"
-                 r"commenti|feedback)", t):
-        out["intento"] = "recensioni"
-        out["luogo"] = _luogo(t, r"(?:fermata|di|su|della|del)\s+(.+)")
-    elif re.search(r"\b(piu vicin|vicino a me|qui vicino|vicino casa|intorno a me|fermata vicina|dove prendo)", t):
+    if re.search(r"\b(piu vicin|vicino a me|qui vicino|vicino casa|intorno a me|fermata vicina|dove prendo)", t):
         out["intento"] = "vicina"
     elif re.search(r"\b(come (?:arrivo|ci arrivo|vado|raggiungo|faccio ad andare)|per andare|devo andare|"
                    r"voglio andare|portami|che bus prendo|quale bus|come si arriva|arrivare a|andare a)\b", t):
@@ -133,26 +129,3 @@ def rispondi_faq(domanda: str, documenti: list[dict]) -> dict:
     if not top:
         return {"risposta": None, "fonti": [], "trovata": False}
     return {"risposta": top[0][1]["testo"], "fonti": [top[0][1]["id"]], "trovata": True}
-
-
-# ---------------------------------------------------------------- sintesi recensioni
-_NEGATIVE = {"senza riparo", "sporca", "pericolosa", "poco visibile", "in ritardo", "affollata", "frequenza bassa",
-             "percorso lungo", "orari scomodi", "poche corse", "informazioni scarse", "manca la domenica"}
-
-
-def sintesi_recensioni(oggetto: str, recensioni: list[dict]) -> str:
-    if not recensioni:
-        return f"Nessuna recensione su {oggetto}."
-    n = len(recensioni)
-    media = sum(r["voto"] for r in recensioni) / n
-    tag = Counter(t for r in recensioni for t in r.get("tag", []))
-    positivi = [t for t, _ in tag.most_common() if t not in _NEGATIVE][:3]
-    negativi = [t for t, _ in tag.most_common() if t in _NEGATIVE][:3]
-    giudizio = ("molto apprezzata" if media >= 4.3 else "apprezzata" if media >= 3.5
-                else "con giudizi contrastanti" if media >= 2.5 else "con diverse critiche")
-    frase = f"{oggetto}: {giudizio}, media {str(round(media, 1)).replace('.', ',')} su 5 da {n} recensioni."
-    if positivi:
-        frase += f" Punti di forza citati: {', '.join(positivi)}."
-    if negativi:
-        frase += f" Criticità segnalate: {', '.join(negativi)}."
-    return frase

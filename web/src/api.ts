@@ -18,7 +18,6 @@ export interface Fermata {
   posizione: string;
   provvisoria: boolean;
   linee?: string[];
-  recensioni?: { media: number; conteggio: number } | null;
 }
 
 export interface Partenza {
@@ -67,10 +66,7 @@ export interface OrarioGiorno {
 export interface LineaDettaglio extends Linea {
   tracciati: Tracciato[];
   fermate: string[];
-  recensioni: { media: number; conteggio: number } | null;
 }
-
-export type TipoRecensione = "fermata" | "linea" | "servizio";
 
 export interface Info {
   agenzia: string;
@@ -88,32 +84,8 @@ export interface Info {
   prossima_corsa: { corsa_id: string; linea: string; partenza: string; fermata: string } | null;
   assistente: boolean;
   esempi_assistente: string[];
-  etichette: Record<TipoRecensione, string[]>;
   avvisi: string[];
   tracciati_stradali: boolean;
-}
-
-export interface Recensione {
-  id: string;
-  tipo: TipoRecensione;
-  oggetto_id: string;
-  voto: number;
-  testo: string;
-  tag: string[];
-  autore: string;
-  creata_il: string;
-}
-
-export interface Riepilogo {
-  conteggio: number;
-  media: number | null;
-  distribuzione: Record<string, number>;
-  tag: { tag: string; conteggio: number }[];
-}
-
-export interface RiepilogoConSintesi extends Riepilogo {
-  oggetto: string;
-  sintesi: { sintesi: string; backend: string; generato_da_ia: boolean } | null;
 }
 
 export interface RispostaAssistente {
@@ -161,12 +133,6 @@ export const api = {
   partenze: (id: string, ora?: string) => richiesta<Partenza[]>(`/fermate/${id}/partenze?${q({ n: 6, ora })}`),
   assistente: (testo: string, lat?: number, lon?: number, ora?: string) =>
     richiesta<RispostaAssistente>(`/assistente?${q({ testo, lat, lon, ora })}`),
-  recensioni: (tipo: TipoRecensione, id: string) =>
-    richiesta<{ riepilogo: Riepilogo; recensioni: Recensione[] }>(`/recensioni?${q({ tipo, id })}`),
-  riepilogo: (tipo: TipoRecensione, id: string) =>
-    richiesta<RiepilogoConSintesi>(`/recensioni/riepilogo?${q({ tipo, id })}`),
-  recensisci: (corpo: { tipo: TipoRecensione; id: string; voto: number; testo: string; tag: string[]; autore: string }) =>
-    richiesta<Recensione>("/recensioni", { method: "POST", body: JSON.stringify(corpo) }),
 };
 
 // ------------------------------------------------------------------ formattazione

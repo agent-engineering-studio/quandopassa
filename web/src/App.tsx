@@ -2,11 +2,11 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { Fermata, FermataVicina, Info, LineaDettaglio, OrarioGiorno, Partenza } from "./api";
 import { api, hhmm } from "./api";
 import Assistente from "./components/Assistente";
+import InArrivo from "./components/InArrivo";
 import Mappa from "./components/Mappa";
 import Partenze from "./components/Partenze";
-import Recensioni from "./components/Recensioni";
 import Icona, { IconaBus } from "./Icona";
-import { hhmmDaSecondi, secondiDelGiorno, veicoliAl } from "./motore";
+import { busInArrivo, hhmmDaSecondi, secondiDelGiorno, veicoliAl } from "./motore";
 import { notifica } from "./notifiche";
 import { giornoLocale, isoLocale, oraLocale, useOrologio } from "./orologio";
 
@@ -37,14 +37,12 @@ export default function App() {
   const [cercoPosizione, setCercoPosizione] = useState(false);
   const [centraSu, setCentraSu] = useState<[number, number] | null>(null);
   const [corsaEvidenziata, setCorsaEvidenziata] = useState<string | null>(null);
-  const [valutazione, setValutazione] = useState("generale");
   const watchId = useRef<number | null>(null);
   const ultimaPosVicine = useRef<string>("");
   const testata = useRef<HTMLElement>(null);
   const riquadro = useRef<HTMLElement>(null);
 
   // ------------------------------------------------------------ dati statici
-  const caricaFermate = useCallback(() => api.fermate().then(setFermate), []);
   useEffect(() => {
     Promise.all([api.info(), api.fermate(), api.linee()])
       .then(([i, f, l]) => {
@@ -146,6 +144,8 @@ export default function App() {
   }, [posizione, minutoCorrente]);
 
   const fermataSel = fermate.find((f) => f.id === selezionata) ?? null;
+  const fermateById = useMemo(() => new Map(fermate.map((f) => [f.id, f])), [fermate]);
+  const arrivi = useMemo(() => (selezionata ? busInArrivo(veicoli, selezionata) : []), [veicoli, selezionata]);
   const vicinaSel = vicine?.find((v) => v.id === selezionata);
 
   // ------------------------------------------------------------ render
@@ -178,7 +178,7 @@ export default function App() {
     { id: "vicino", etichetta: "Vicino a te", icona: "it-map-marker-circle" },
     { id: "fermata", etichetta: "Fermata", icona: "it-map-marker", disabilitata: !selezionata },
     ...(info.assistente ? [{ id: "assistente" as const, etichetta: "Chiedi", icona: "it-comment" }] : []),
-    { id: "servizio", etichetta: "Servizio", icona: "it-star-outline" },
+    { id: "servizio", etichetta: "Servizio", icona: "it-info-circle" },
   ];
 
   return (
@@ -418,16 +418,18 @@ export default function App() {
                     a piedi.
                   </p>
                 )}
+                <InArrivo
+                  arrivi={arrivi}
+                  linee={linee}
+                  fermate={fermateById}
+                  prossimaPartenza={partenze[0]}
+                  onBus={(corsa, pos) => {
+                    setCorsaEvidenziata(corsa);
+                    setCentraSu(pos);
+                  }}
+                />
                 <h3 className="h5 mt-3">Prossimi passaggi</h3>
                 <Partenze partenze={partenze} oggi={oggi} aPiediMin={vicinaSel?.a_piedi_min} onCorsa={setCorsaEvidenziata} />
-                <hr className="my-4" />
-                <Recensioni
-                  tipo="fermata"
-                  id={fermataSel.id}
-                  etichette={info.etichette.fermata}
-                  titolo="Recensioni della fermata"
-                  onCambio={caricaFermate}
-                />
               </div>
             )}
 
@@ -451,27 +453,30 @@ export default function App() {
                     <p className="small text-muted mb-0">Versione orario {info.versione_feed}</p>
                   </div>
                 </div>
-                <div className="select-wrapper">
-                  <label htmlFor="valuta">Cosa vuoi valutare</label>
-                  <select id="valuta" value={valutazione} onChange={(e) => setValutazione(e.currentTarget.value)}>
-                    <option value="generale">Il servizio in generale</option>
+                <section aria-labelledby="titolo-linee">
+                  <h2 id="titolo-linee" className="h5">Linee</h2>
+                  <ul className="list-unstyled d-flex flex-column gap-2 mb-0">
                     {linee.map((l) => (
-                      <option key={l.id} value={`linea:${l.id}`}>
-                        {l.nome_esteso}
-                      </option>
+                      <li key={l.id} className="d-flex align-items-center gap-2">
+                        <span className="badge badge-linea" style={{ background: l.colore }}>
+                          {l.nome}
+                        </span>
+                        <span>
+                          <strong className="d-block">{l.nome_esteso}</strong>
+                          <span className="small text-muted">{l.fermate.length} fermate · percorso circolare</span>
+                        </span>
+                      </li>
                     ))}
-                  </select>
-                </div>
-                {valutazione === "generale" ? (
-                  <Recensioni tipo="servizio" id="generale" etichette={info.etichette.servizio} titolo="Recensioni del servizio" />
-                ) : (
-                  <Recensioni
-                    tipo="linea"
-                    id={valutazione.split(":")[1]}
-                    etichette={info.etichette.linea}
-                    titolo={`Recensioni · ${linee.find((l) => l.id === valutazione.split(":")[1])?.nome_esteso}`}
-                  />
-                )}
+                  </ul>
+                </section>
+                <section aria-labelledby="titolo-dati">
+                  <h2 id="titolo-dati" className="h5">Come leggere i dati</h2>
+                  <ul className="small mb-0 ps-3">
+                    {info.avvisi.map((a) => (
+                      <li key={a}>{a}</li>
+                    ))}
+                  </ul>
+                </section>
               </div>
             )}
           </div>

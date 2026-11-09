@@ -1,4 +1,4 @@
-"""Fixture condivise: feed GTFS di test, app con archivio in memoria e server di inferenza reale (rules)."""
+"""Fixture condivise: feed GTFS di test, app e server di inferenza reale (rules)."""
 from __future__ import annotations
 
 import os
@@ -33,7 +33,6 @@ mcp_quandopassa = carica("mcp_quandopassa", RADICE / "mcp_server" / "server.py")
 
 from quandopassa.ai import ClientIA  # noqa: E402
 from quandopassa.config import Config  # noqa: E402
-from quandopassa.feedback import ArchivioMemoria, crea_archivio  # noqa: E402
 from quandopassa.gtfs import Orario  # noqa: E402
 from quandopassa.main import create_app  # noqa: E402
 
@@ -49,31 +48,15 @@ def orario() -> Orario:
 
 
 @pytest.fixture
-def archivio():
-    url = os.getenv("TEST_DATABASE_URL")
-    if not url:
-        yield ArchivioMemoria()
-        return
-    import uuid
-    schema = f"test_{uuid.uuid4().hex[:8]}"
-    a = crea_archivio(url, schema)
-    yield a
-    with a.pool.connection() as c:
-        c.execute(f'DROP SCHEMA "{schema}" CASCADE')
-    a.chiudi()
-
-
-@pytest.fixture
 def ia():
     return ClientIA("http://inference", client=TestClient(inference.app))
 
 
 @pytest.fixture
 def cfg(tmp_path):
-    return Config(gtfs_dir=GTFS, ufficio_user="ufficio", ufficio_password="segreta", web_dist=tmp_path,
-                  demo_ora="2026-11-11T09:05:00")
+    return Config(gtfs_dir=GTFS, web_dist=tmp_path, demo_ora="2026-11-11T09:05:00")
 
 
 @pytest.fixture
-def client(cfg, archivio, ia):
-    return TestClient(create_app(cfg, archivio, ia))
+def client(cfg, ia):
+    return TestClient(create_app(cfg, ia))
