@@ -1,0 +1,2 @@
+agency_id,agency_name,agency_url,agency_timezone,agency_lang,agency_phone
+SABATO,Sabato Viaggi – Servizio urbano Gioia del Colle,https://www.comune.gioiadelcolle.ba.it/,Europe/Rome,it,+39 080 3482816

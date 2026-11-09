@@ -1,0 +1,106 @@
+# QuandoPassa: il bus urbano sulla mappa, stimato dall'orario GTFS (senza GPS a bordo).
+#
+#   cp .env.example .env
+#   docker compose up --build                     app + database + server di inferenza (rules, offline) + server MCP
+#   docker compose --profile llm up --build       + LLM locale con Ollama (modello piccolo, CPU)
+#   docker compose --profile test run --rm test   suite pytest (anche su PostgreSQL)
+#
+# Il feed GTFS è la cartella indicata da GTFS_DIR nel .env, montata in sola lettura.
+name: quandopassa
+
+x-database-url: &database-url postgresql://quandopassa:${POSTGRES_PASSWORD:-quandopassa-dev}@db:5432/quandopassa
+
+services:
+  db:
+    container_name: quandopassa-db
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_DB: quandopassa
+      POSTGRES_USER: quandopassa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-quandopassa-dev}
+      TZ: Europe/Rome
+    volumes: ["pgdati:/var/lib/postgresql/data"]
+    expose: ["5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quandopassa -d quandopassa"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  app:
+    container_name: quandopassa-app
+    build: .
+    ports: ["8000:8000"]
+    env_file: [.env]
+    environment:
+      GTFS_DIR: /srv/gtfs
+      INFERENCE_URL: http://inference:8080
+      DATABASE_URL: ${DATABASE_URL:-postgresql://quandopassa:${POSTGRES_PASSWORD:-quandopassa-dev}@db:5432/quandopassa}
+    volumes:
+      - ${GTFS_DIR:-./data/gtfs/resta}:/srv/gtfs:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      inference:
+        condition: service_healthy
+    restart: unless-stopped
+
+  inference:
+    container_name: quandopassa-inference
+    build: ./inference
+    environment:
+      INFERENCE_BACKEND: ${INFERENCE_BACKEND:-rules}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://ollama:11434/v1}
+      LLM_MODEL: ${LLM_MODEL:-qwen2.5:1.5b-instruct}
+      LLM_API_KEY: ${LLM_API_KEY:-ollama}
+      LLM_TIMEOUT: ${LLM_TIMEOUT:-20}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    expose: ["8080"]
+    restart: unless-stopped
+
+  # server MCP: il bus urbano come strumento per agenti esterni (usa solo le API HTTP dell'app)
+  mcp:
+    container_name: quandopassa-mcp
+    build: ./mcp_server
+    ports: ["127.0.0.1:8090:8090"]
+    environment:
+      QUANDOPASSA_URL: http://app:8000
+      MCP_ALLOWED_HOSTS: ${MCP_ALLOWED_HOSTS:-localhost:*,127.0.0.1:*}
+      MCP_RECENSIONI_SCRITTURA: ${MCP_RECENSIONI_SCRITTURA:-false}
+      QUANDOPASSA_UFFICIO_USER: ${MCP_UFFICIO_USER:-}
+      QUANDOPASSA_UFFICIO_PASSWORD: ${MCP_UFFICIO_PASSWORD:-}
+    depends_on: [app]
+    restart: unless-stopped
+
+  ollama:
+    container_name: quandopassa-ollama
+    image: ollama/ollama:0.12.11
+    profiles: ["llm"]
+    volumes: ["modelli:/root/.ollama"]
+    expose: ["11434"]
+
+  ollama-pull:
+    container_name: quandopassa-ollama-pull
+    image: ollama/ollama:0.12.11
+    profiles: ["llm"]
+    depends_on: [ollama]
+    environment: { OLLAMA_HOST: "ollama:11434" }
+    entrypoint: ["sh", "-c", "sleep 3 && ollama pull ${LLM_MODEL:-qwen2.5:1.5b-instruct}"]
+    restart: "no"
+
+  test:
+    container_name: quandopassa-test
+    build:
+      context: .
+      dockerfile: tests.Dockerfile
+    profiles: ["test"]
+    environment:
+      TEST_DATABASE_URL: *database-url
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdati:
+  modelli:

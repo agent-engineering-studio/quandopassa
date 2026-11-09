@@ -1,0 +1,47 @@
+{
+  "_nota": "Sorgente dei file GTFS di questa cartella. Fermate: le 20 aree della proposta di localizzazione pensiline (Circolari A e B, 9/11/2026). Sequenza e minuti di percorrenza: dal template GTFS Sabato Viaggi (orari ufficiali), tenendo solo le fermate della proposta. Rigenerare con: python scripts/build_gtfs.py data/gtfs/resta",
+  "agency": {
+    "agency_id": "SABATO",
+    "agency_name": "Sabato Viaggi – Servizio urbano Gioia del Colle",
+    "agency_url": "https://www.comune.gioiadelcolle.ba.it/",
+    "agency_timezone": "Europe/Rome",
+    "agency_lang": "it",
+    "agency_phone": "+39 080 3482816"
+  },
+  "feed_info": {
+    "feed_publisher_name": "Agent Engineering Studio (proposta, non ufficiale)",
+    "feed_publisher_url": "https://agentengineering.it/",
+    "feed_lang": "it",
+    "feed_start_date": "20260101",
+    "feed_end_date": "20261231",
+    "feed_version": "2026-11-09-resta"
+  },
+  "calendar": [
+    {"service_id": "SVC_A_STD", "giorni": "1011110", "nota": "Circolare A ordinaria: lun, mer, gio, ven, sab (il martedì gira la variante Mercato, fuori da questa proposta)"},
+    {"service_id": "SVC_MON_SAT", "giorni": "1111110", "nota": "Circolare B: lunedì-sabato"}
+  ],
+  "linee": [
+    {
+      "route_id": "A",
+      "route_short_name": "A",
+      "route_long_name": "Circolare A",
+      "route_color": "1C7ED6",
+      "route_text_color": "FFFFFF",
+      "service_id": "SVC_A_STD",
+      "headsign": "Circolare A",
+      "percorso": [["R01", 0], ["R08", 1], ["R09", 2], ["R02", 5], ["R03", 6], ["R04", 7], ["R05", 10], ["R06", 11], ["R07", 13], ["R10", 17], ["R08", 19]],
+      "partenze": ["08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00"]
+    },
+    {
+      "route_id": "B",
+      "route_short_name": "B",
+      "route_long_name": "Circolare B",
+      "route_color": "495057",
+      "route_text_color": "FFFFFF",
+      "service_id": "SVC_MON_SAT",
+      "headsign": "Circolare B",
+      "percorso": [["R11", 0], ["R12", 1], ["R13", 3], ["R14", 5], ["R15", 7], ["R16", 8], ["R17", 9], ["R18", 11], ["R19", 14], ["R20A", 20], ["R05", 25], ["R20B", 29], ["R11", 32]],
+      "partenze": ["08:15", "08:48", "09:18", "09:48", "10:18", "10:48", "11:18", "11:48"]
+    }
+  ]
+}

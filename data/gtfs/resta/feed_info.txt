@@ -1,0 +1,2 @@
+feed_publisher_name,feed_publisher_url,feed_lang,feed_start_date,feed_end_date,feed_version
+"Agent Engineering Studio (proposta, non ufficiale)",https://agentengineering.it/,it,20260101,20261231,2026-11-09-resta

@@ -1,0 +1,48 @@
+name: geocoding
+# Geocodifica le fermate senza coordinate (OpenStreetMap), calcola i tracciati stradali
+# delle linee e rigenera i file GTFS. Parte da sola quando cambiano fermate o percorsi,
+# oppure a mano da Actions → geocoding → Run workflow.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "data/gtfs/*/fermate.csv"
+      - "data/gtfs/*/percorsi.json"
+      - "scripts/geocode_stops.py"
+      - "scripts/build_gtfs.py"
+  workflow_dispatch:
+    inputs:
+      cartella:
+        description: Cartella GTFS
+        default: data/gtfs/resta
+      tutte:
+        description: Rifai tutte le fermate (tranne fonte=manuale)
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency: geocoding
+
+jobs:
+  geocoding:
+    runs-on: ubuntu-latest
+    env:
+      CARTELLA: ${{ inputs.cartella || 'data/gtfs/resta' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Geocoding fermate e tracciati
+        run: python scripts/geocode_stops.py "$CARTELLA" --forme ${{ inputs.tutte && '--tutte' || '' }}
+      - name: Rigenera GTFS
+        run: python scripts/build_gtfs.py "$CARTELLA"
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$CARTELLA"
+          git diff --cached --quiet || git commit -m "GTFS: geocoding fermate e tracciati ($CARTELLA)"
+          git push
