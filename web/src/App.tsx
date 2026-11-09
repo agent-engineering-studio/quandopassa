@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { Fermata, FermataVicina, Info, LineaDettaglio, OrarioGiorno, Partenza } from "./api";
+import type { Fermata, FermataVicina, Info, Itinerario, LineaDettaglio, Luogo, OrarioGiorno, Partenza } from "./api";
 import { api, hhmm } from "./api";
 import Assistente from "./components/Assistente";
+import ComeArrivo, { type Campo } from "./components/ComeArrivo";
 import InArrivo from "./components/InArrivo";
 import Mappa from "./components/Mappa";
 import Partenze from "./components/Partenze";
@@ -10,7 +11,7 @@ import { busInArrivo, hhmmDaSecondi, secondiDelGiorno, veicoliAl } from "./motor
 import { notifica } from "./notifiche";
 import { giornoLocale, isoLocale, oraLocale, useOrologio } from "./orologio";
 
-type Pannello = "vicino" | "fermata" | "assistente" | "servizio";
+type Pannello = "vicino" | "percorso" | "fermata" | "assistente" | "servizio";
 interface Posizione {
   lat: number;
   lon: number;
@@ -37,6 +38,9 @@ export default function App() {
   const [cercoPosizione, setCercoPosizione] = useState(false);
   const [centraSu, setCentraSu] = useState<[number, number] | null>(null);
   const [corsaEvidenziata, setCorsaEvidenziata] = useState<string | null>(null);
+  const [itinerario, setItinerario] = useState<Itinerario | null>(null);
+  const [sceltaCampo, setSceltaCampo] = useState<Campo | null>(null);
+  const [luogoScelto, setLuogoScelto] = useState<{ campo: Campo; luogo: Luogo } | null>(null);
   const watchId = useRef<number | null>(null);
   const ultimaPosVicine = useRef<string>("");
   const testata = useRef<HTMLElement>(null);
@@ -117,7 +121,7 @@ export default function App() {
           return nuova;
         });
         setCercoPosizione(false);
-        setPannello((x) => (x === "fermata" ? x : "vicino"));
+        setPannello((x) => (x === "fermata" || x === "percorso" ? x : "vicino"));
       },
       (e) => {
         setCercoPosizione(false);
@@ -176,6 +180,7 @@ export default function App() {
 
   const schede: { id: Pannello; etichetta: string; icona: string; disabilitata?: boolean }[] = [
     { id: "vicino", etichetta: "Vicino a te", icona: "it-map-marker-circle" },
+    { id: "percorso", etichetta: "Come arrivo", icona: "it-flag" },
     { id: "fermata", etichetta: "Fermata", icona: "it-map-marker", disabilitata: !selezionata },
     ...(info.assistente ? [{ id: "assistente" as const, etichetta: "Chiedi", icona: "it-comment" }] : []),
     { id: "servizio", etichetta: "Servizio", icona: "it-info-circle" },
@@ -284,9 +289,29 @@ export default function App() {
                 mostraPannello();
               }}
               centraSu={centraSu}
+              itinerario={pannello === "percorso" ? itinerario : null}
+              sceltaPunto={sceltaCampo !== null}
+              onPunto={(lat, lon) => {
+                if (!sceltaCampo) return;
+                setLuogoScelto({ campo: sceltaCampo, luogo: { tipo: "mappa", nome: "Punto sulla mappa", lat, lon } });
+                setSceltaCampo(null);
+                setPannello("percorso");
+                mostraPannello();
+              }}
             />
 
-            {nessunBus && (
+            {sceltaCampo && (
+              <div className="avviso-mappa alert alert-info bg-white shadow-sm py-2 mb-0 d-flex align-items-center gap-2" role="status">
+                <span className="flex-grow-1 small">
+                  <strong>Tocca la mappa</strong> per scegliere {sceltaCampo === "da" ? "la partenza" : "l'arrivo"}.
+                </span>
+                <button type="button" className="btn btn-outline-primary btn-xs" onClick={() => setSceltaCampo(null)}>
+                  Annulla
+                </button>
+              </div>
+            )}
+
+            {nessunBus && !sceltaCampo && pannello !== "percorso" && (
               <div className="avviso-mappa alert alert-warning bg-white shadow-sm py-2 mb-0 d-flex align-items-center gap-2 flex-wrap">
                 <span className="flex-grow-1 small">
                   <strong>Nessun bus in servizio ora.</strong>
@@ -428,9 +453,39 @@ export default function App() {
                     setCentraSu(pos);
                   }}
                 />
+                <button
+                  type="button"
+                  className="btn btn-outline-primary btn-sm btn-icon mb-2"
+                  onClick={() => {
+                    setLuogoScelto({
+                      campo: "a",
+                      luogo: { tipo: "fermata", id: fermataSel.id, nome: fermataSel.nome, lat: fermataSel.lat, lon: fermataSel.lon },
+                    });
+                    setPannello("percorso");
+                  }}
+                >
+                  <Icona nome="it-flag" classe="icon-sm icon-primary" />
+                  <span>Portami qui</span>
+                </button>
                 <h3 className="h5 mt-3">Prossimi passaggi</h3>
                 <Partenze partenze={partenze} oggi={oggi} aPiediMin={vicinaSel?.a_piedi_min} onCorsa={setCorsaEvidenziata} />
               </div>
+            )}
+
+            {pannello === "percorso" && (
+              <ComeArrivo
+                posizione={posizione}
+                chiediPosizione={localizza}
+                dallaMappa={luogoScelto}
+                onScegliSullaMappa={(campo) => {
+                  setSceltaCampo(campo);
+                  if (campo && window.matchMedia(MOBILE).matches)
+                    document.querySelector(".mappa-box")?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }}
+                sceltaInCorso={sceltaCampo}
+                selezionato={itinerario}
+                onItinerario={setItinerario}
+              />
             )}
 
             {pannello === "assistente" && info.assistente && (

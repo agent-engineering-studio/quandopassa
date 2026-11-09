@@ -22,6 +22,8 @@ nav = [
   { "Comune" = [
     { "Benefici per il Comune" = "comune.md" },
     { "Il feed GTFS e le fermate" = "gtfs.md" },
+    { "Conformità normativa" = "conformita.md" },
+    { "Riuso e Catalogo Developers Italia" = "riuso.md" },
   ] },
   { "Sviluppatori e IT" = [
     { "Installazione" = "installazione.md" },
@@ -29,6 +31,7 @@ nav = [
     { "Architettura e API" = "architettura.md" },
     { "Intelligenza artificiale" = "intelligenza-artificiale.md" },
     { "Server MCP" = "mcp.md" },
+    { "Installazione conforme PA" = "normativa-it.md" },
     { "Video e demo" = "video.md" },
   ] },
 ]

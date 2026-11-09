@@ -1,7 +1,7 @@
 import L from "leaflet";
-import { useEffect, useMemo } from "react";
-import { Circle, CircleMarker, MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap } from "react-leaflet";
-import type { Fermata, Info, LineaDettaglio } from "../api";
+import { Fragment, useEffect, useMemo } from "react";
+import { Circle, CircleMarker, MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
+import type { Fermata, Info, Itinerario, LineaDettaglio } from "../api";
 import type { Veicolo } from "../motore";
 import { hhmmDaSecondi } from "../motore";
 
@@ -16,6 +16,67 @@ interface Props {
   corsaEvidenziata: string | null;
   onFermata: (id: string) => void;
   centraSu: [number, number] | null;
+  itinerario?: Itinerario | null;
+  sceltaPunto?: boolean;
+  onPunto?: (lat: number, lon: number) => void;
+}
+
+const iconaArrivo = L.divIcon({
+  className: "pin-arrivo",
+  iconSize: [30, 40],
+  iconAnchor: [15, 38],
+  html: `<svg viewBox="0 0 30 40" width="30" height="40" aria-hidden="true"><path d="M15 1C7.3 1 1 7.2 1 14.9 1 25.3 15 39 15 39s14-13.7 14-24.1C29 7.2 22.7 1 15 1Z" fill="#a61d2a" stroke="#fff" stroke-width="2"/><circle cx="15" cy="15" r="5.5" fill="#fff"/></svg>`,
+});
+
+function Clic({ attivo, onPunto }: { attivo: boolean; onPunto?: (lat: number, lon: number) => void }) {
+  const map = useMapEvents({ click: (e) => attivo && onPunto?.(e.latlng.lat, e.latlng.lng) });
+  useEffect(() => {
+    map.getContainer().style.cursor = attivo ? "crosshair" : "";
+  }, [attivo, map]);
+  return null;
+}
+
+function AdattaItinerario({ it }: { it: Itinerario | null | undefined }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!it) return;
+    const punti = it.tratti.flatMap((t) => t.punti);
+    if (punti.length) map.flyToBounds(L.latLngBounds(punti), { padding: [50, 50], duration: 0.6, maxZoom: 17 });
+  }, [it, map]);
+  return null;
+}
+
+function PercorsoItinerario({ it }: { it: Itinerario }) {
+  const primo = it.tratti[0];
+  const ultimo = it.tratti[it.tratti.length - 1];
+  const inizio = primo.tipo === "piedi" ? primo.da : primo.salita;
+  const fine = ultimo.tipo === "piedi" ? ultimo.a : ultimo.discesa;
+  return (
+    <>
+      {it.tratti.map((t, i) =>
+        t.tipo === "piedi" ? (
+          <Polyline key={i} positions={t.punti} pathOptions={{ color: "#33475b", weight: 4, dashArray: "2 9", lineCap: "round" }} />
+        ) : (
+          <Fragment key={i}>
+            <Polyline positions={t.punti} pathOptions={{ color: "#fff", weight: 11, opacity: 0.9, lineJoin: "round" }} />
+            <Polyline positions={t.punti} pathOptions={{ color: t.colore, weight: 7, lineJoin: "round" }} />
+            <CircleMarker center={[t.salita.lat, t.salita.lon]} radius={6} pathOptions={{ color: t.colore, weight: 3, fillColor: "#fff", fillOpacity: 1 }}>
+              <Tooltip>Sali: {t.salita.nome}</Tooltip>
+            </CircleMarker>
+            <CircleMarker center={[t.discesa.lat, t.discesa.lon]} radius={6} pathOptions={{ color: t.colore, weight: 3, fillColor: "#fff", fillOpacity: 1 }}>
+              <Tooltip>Scendi: {t.discesa.nome}</Tooltip>
+            </CircleMarker>
+          </Fragment>
+        ),
+      )}
+      <CircleMarker center={[inizio.lat, inizio.lon]} radius={8} pathOptions={{ color: "#fff", weight: 3, fillColor: "#0066cc", fillOpacity: 1 }}>
+        <Tooltip>Partenza: {inizio.nome}</Tooltip>
+      </CircleMarker>
+      <Marker position={[fine.lat, fine.lon]} icon={iconaArrivo} zIndexOffset={2000} title={`Arrivo: ${fine.nome}`} alt={`Arrivo: ${fine.nome}`}>
+        <Tooltip direction="top" offset={[0, -34]}>Arrivo: {fine.nome}</Tooltip>
+      </Marker>
+    </>
+  );
 }
 
 const cacheIcone = new Map<string, L.DivIcon>();
@@ -84,6 +145,8 @@ export default function Mappa(p: Props) {
     <MapContainer center={p.info.centro} zoom={15} zoomControl={false} className="mappa" preferCanvas={false}>
       <TileLayer url={p.info.mappa.tiles} attribution={p.info.mappa.attribuzione} maxZoom={19} />
       <Ridimensiona />
+      <Clic attivo={!!p.sceltaPunto} onPunto={p.onPunto} />
+      <AdattaItinerario it={p.itinerario} />
       <Adatta fermate={p.fermate} />
       <Centra centro={p.centraSu} />
 
@@ -94,7 +157,7 @@ export default function Mappa(p: Props) {
             <Polyline
               key={t.id}
               positions={t.punti}
-              pathOptions={{ color: l.colore, weight: 5, opacity: 0.75, lineJoin: "round" }}
+              pathOptions={{ color: l.colore, weight: 5, opacity: p.itinerario ? 0.2 : 0.75, lineJoin: "round" }}
             />
           )),
         )}
@@ -128,6 +191,8 @@ export default function Mappa(p: Props) {
           );
         })}
 
+      {p.itinerario && <PercorsoItinerario it={p.itinerario} />}
+
       {p.posizione && (
         <>
           <Circle
@@ -156,6 +221,7 @@ export default function Mappa(p: Props) {
               position={[v.lat, v.lon]}
               icon={iconaBus(nomeLinea.get(v.corsa.linea_id) ?? "?", coloreLinea.get(v.corsa.linea_id) ?? "#333", v.direzione, evid)}
               zIndexOffset={evid ? 1000 : 500}
+              alt={`Bus linea ${nomeLinea.get(v.corsa.linea_id)}, prossima fermata ${prossima?.nome ?? ""}`}
             >
               <Tooltip direction="top" offset={[0, -16]}>
                 <strong>Linea {nomeLinea.get(v.corsa.linea_id)}</strong> · {v.corsa.destinazione}

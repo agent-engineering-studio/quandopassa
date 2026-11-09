@@ -13,6 +13,7 @@ from datetime import datetime, time
 from .ai import ClientIA, base_conoscenza
 from .config import Config
 from .gtfs import Orario
+from .itinerari import Pianificatore
 
 ESEMPI = [
     "Quando passa il prossimo bus?",
@@ -54,6 +55,7 @@ def _quando(iso: str, ora: datetime) -> str:
 class Assistente:
     def __init__(self, cfg: Config, orario: Orario, ia: ClientIA):
         self.cfg, self.orario, self.ia = cfg, orario, ia
+        self.pianificatore = Pianificatore(orario)
 
     def rispondi(self, testo: str, ora: datetime, lat: float | None = None, lon: float | None = None) -> dict:
         intento = self.ia.interpreta(testo)
@@ -170,16 +172,30 @@ class Assistente:
         if vicine and vicine[0]["id"] == fermata["id"] and vicine[0]["distanza_m"] <= 500:
             return (f"{fermata['nome']} è a {vicine[0]['distanza_m']} m da te: ci arrivi a piedi in "
                     f"{vicine[0]['a_piedi_min']} min.", {"fermata": fermata, "a_piedi": True})
-        opzioni = self.orario.percorso(*posizione, [fermata["id"]], ora)
+        r = self.pianificatore.pianifica(posizione, (fermata["lat"], fermata["lon"]), ora,
+                                         nome_destinazione=fermata["nome"])
+        opzioni = [o for o in r["opzioni"] if o["linee"]]
+        piedi = next((o for o in r["opzioni"] if not o["linee"]), None)
+        if piedi and (not opzioni or piedi["arrivo"] <= opzioni[0]["arrivo"]):
+            return (f"A piedi fai prima: {fermata['nome']} è a circa {piedi['durata_min']} min "
+                    f"({piedi['a_piedi_m']} m).", {"fermata": fermata, "opzioni": r["opzioni"], "a_piedi": True})
         if not opzioni:
-            return (f"Non trovo un bus diretto dalle fermate vicine a te fino a {fermata['nome']}. "
+            return (f"Non trovo un percorso in bus dalle fermate vicine a te fino a {fermata['nome']}. "
                     "Guarda le linee sulla mappa o chiedi gli orari di una fermata.", {"fermata": fermata, "opzioni": []})
         o = opzioni[0]
-        bozza = (f"Cammina fino a {o['fermata_salita']} ({o['a_piedi_m']} m, {o['a_piedi_min']} min, esci entro le "
-                 f"{_hhmm(o['esci_entro'])}), prendi la linea {o['linea']} {_quando(o['partenza'], ora)} e scendi a "
-                 f"{o['fermata_discesa']} alle {_hhmm(o['arrivo'])}"
-                 + (f" dopo {o['fermate_intermedie']} fermate." if o['fermate_intermedie'] else ", fermata successiva."))
-        return bozza, {"fermata": fermata, "opzioni": opzioni}
+        frasi = []
+        for t in o["tratti"]:
+            if t["tipo"] == "piedi" and t is o["tratti"][0]:
+                frasi.append(f"Cammina fino a {t['a']['nome']} ({t['metri']} m, {t['minuti']} min, esci entro le "
+                             f"{_hhmm(o['partenza'])})")
+            elif t["tipo"] == "bus":
+                cambio = f"cambia e prendi la linea {t['linea']}" if t["attesa_min"] else f"prendi la linea {t['linea']}"
+                frasi.append(f"{cambio} {_quando(t['salita']['orario'], ora)} da {t['salita']['nome']} e scendi a "
+                             f"{t['discesa']['nome']} alle {_hhmm(t['discesa']['orario'])}")
+            elif t["tipo"] == "piedi":
+                frasi.append(f"poi cammina {t['metri']} m fino a destinazione")
+        bozza = ", ".join(frasi) + f". Arrivo previsto alle {_hhmm(o['arrivo'])}."
+        return bozza[0].upper() + bozza[1:], {"fermata": fermata, "opzioni": opzioni}
 
     def _orari_linea(self, intento, ora, **_):
         linee = [intento["linea"].upper()] if intento.get("linea") else list(self.orario.linee)

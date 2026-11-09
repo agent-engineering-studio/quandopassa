@@ -198,7 +198,7 @@ class Orario:
                                                  r.get("stop_desc", ""), posizione)
         self.linee: dict[str, Linea] = {
             r["route_id"]: Linea(r["route_id"], r.get("route_short_name") or r["route_id"],
-                                 r.get("route_long_name", ""), r.get("route_color") or "1C7ED6",
+                                 r.get("route_long_name", ""), r.get("route_color") or "0066CC",
                                  r.get("route_text_color") or "FFFFFF")
             for r in _leggi(c / "routes.txt")}
         self.calendario = {r["service_id"]: r for r in _leggi(c / "calendar.txt")}
@@ -233,7 +233,7 @@ class Orario:
         self.tracciati: dict[str, Tracciato] = {}
         for corsa in self.corse.values():
             chiave = (corsa.linea_id, tuple(corsa.fermate), corsa.tracciato_id)
-            tid = f"{corsa.linea_id}:{hashlib.sha1(repr(chiave).encode()).hexdigest()[:8]}"
+            tid = f"{corsa.linea_id}:{hashlib.sha1(repr(chiave).encode(), usedforsecurity=False).hexdigest()[:8]}"
             if tid not in self.tracciati:
                 self.tracciati[tid] = self._tracciato(tid, corsa, sorted(forme.get(corsa.tracciato_id, [])))
             corsa.tracciato_id = tid

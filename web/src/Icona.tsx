@@ -27,3 +27,15 @@ export function IconaBus({ dim = 24 }: { dim?: number }) {
     </svg>
   );
 }
+
+/** Pittogramma della persona a piedi. */
+export function IconaPiedi({ dim = 18 }: { dim?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={dim} height={dim} aria-hidden="true">
+      <path
+        fill="currentColor"
+        d="M13.5 5.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM9.8 8.9 7 23h2.1l1.8-8 2.1 2v6h2v-7.5l-2.1-2 .6-3A7.3 7.3 0 0 0 19 13v-2a5 5 0 0 1-4.3-2.4l-1-1.6a2 2 0 0 0-1.7-1c-.3 0-.5 0-.8.1L6 8.3V13h2V9.6l1.8-.7"
+      />
+    </svg>
+  );
+}

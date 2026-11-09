@@ -54,7 +54,7 @@ def ia():
 
 @pytest.fixture
 def cfg(tmp_path):
-    return Config(gtfs_dir=GTFS, web_dist=tmp_path, demo_ora="2026-11-11T09:05:00")
+    return Config(gtfs_dir=GTFS, web_dist=tmp_path, demo_ora="2026-11-11T09:05:00", geocoder="")
 
 
 @pytest.fixture

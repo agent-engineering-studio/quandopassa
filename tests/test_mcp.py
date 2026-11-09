@@ -32,6 +32,9 @@ def test_strumenti_pubblici(client):
     assert _chiama(mcp, "cerca_fermata", nome="plebiscito")[0]["id"] == "R02"
     p = _chiama(mcp, "prossime_partenze", fermata_id="R05", n=2, ora=MERCOLEDI_9.isoformat())
     assert p[0]["orario"].startswith("2026-11-11T09:10")
+    it = _chiama(mcp, "come_arrivare", lat=40.7835, lon=16.9334, destinazione="Piazza Plebiscito",
+                 ora=MERCOLEDI_9.isoformat())
+    assert it["destinazione"]["nome"] == "Piazza Plebiscito" and it["opzioni"]
     v = _chiama(mcp, "bus_in_servizio", ora=MERCOLEDI_9.isoformat())
     assert v["tempo_reale"] is False and v["veicoli"]
 

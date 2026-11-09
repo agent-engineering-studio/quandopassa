@@ -30,8 +30,8 @@ L'istanza demo usa un orologio fisso su un mercoledì mattina, quando circolano 
 
     ---
 
-    Il bus sulla mappa del telefono, la fermata più vicina con i minuti a piedi, il bus in arrivo e
-    un assistente a cui chiedere in italiano. Niente app da installare, niente registrazione.
+    Il bus sulla mappa del telefono, la fermata più vicina con i minuti a piedi, il bus in arrivo,
+    **come arrivo** con i cambi e un assistente a cui chiedere in italiano. Niente app da installare, niente registrazione.
 
     [:octicons-arrow-right-24: Usare QuandoPassa](cittadini.md)
 
@@ -56,6 +56,15 @@ L'istanza demo usa un orologio fisso su un mercoledì mattina, quando circolano 
     [Architettura e API](architettura.md) · [Server MCP](mcp.md)
 
 </div>
+
+## Come arrivo, come su un navigatore
+
+<video class="video-demo" controls muted playsinline preload="metadata" poster="screenshot/08_come_arrivo.png">
+  <source src="demo/quandopassa-come-arrivo.mp4" type="video/mp4">
+</video>
+
+*Da una fermata, un indirizzo o un punto sulla mappa: quali bus prendere, dove cambiare, quanto camminare.
+E quando conviene, "solo a piedi".*
 
 ## Cosa vedi
 
@@ -83,6 +92,7 @@ L'istanza demo usa un orologio fisso su un mercoledì mattina, quando circolano 
 | Fermata più vicina | bisogna conoscerla | trovata dalla **posizione del telefono** |
 | Quando passa | orario da consultare | **"tra ~10 min"**, con fermate e metri che mancano |
 | Faccio in tempo? | a occhio | **"fai in tempo"**, **"affrettati"**, **"non fai in tempo"** |
+| Come arrivo | bisogna conoscere le linee | **itinerario** a piedi + bus, con il cambio e l'orario di arrivo |
 | Domande | telefono all'azienda | **assistente IA** in italiano, orari calcolati dall'app |
 | Altri sistemi | nessuna integrazione | **API aperte** e **server MCP** |
 

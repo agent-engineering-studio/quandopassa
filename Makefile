@@ -7,7 +7,7 @@ GTFS    ?= data
 S       ?=
 
 .DEFAULT_GOAL := help
-.PHONY: help env build build-nocache up up-llm down restart ps logs shell test gtfs geocode demo video docs clean
+.PHONY: help env build build-nocache up up-llm down restart ps logs shell test gtfs geocode demo video accessibilita docs clean
 
 help: ## Mostra questo elenco
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
@@ -56,13 +56,20 @@ demo: env ## Istanza demo su :8001 con orologio fisso (mercoledì 11/11/2026, 09
 	$(COMPOSE) --profile demo up -d --build demo
 	@echo "demo: http://localhost:8001"
 
-video: ## Video 16:9 e 9:16 e screenshot in docs/ (serve make demo, playwright e ffmpeg)
+video: ## Video (demo e come arrivo, 16:9 e 9:16) e screenshot in docs/ (serve make demo, playwright e ffmpeg)
 	$(COMPOSE) --profile demo restart demo && sleep 4
 	$(PYTHON) scripts/registra_demo.py
 	$(COMPOSE) --profile demo restart demo && sleep 4
 	$(PYTHON) scripts/registra_demo.py --verticale
 	$(COMPOSE) --profile demo restart demo && sleep 4
+	$(PYTHON) scripts/registra_demo.py --percorso
+	$(COMPOSE) --profile demo restart demo && sleep 4
+	$(PYTHON) scripts/registra_demo.py --percorso --verticale
+	$(COMPOSE) --profile demo restart demo && sleep 4
 	$(PYTHON) scripts/registra_demo.py --screenshot
+
+accessibilita: ## Audit axe-core WCAG 2.1 AA di tutte le schede sull'istanza demo (serve make demo e playwright)
+	$(PYTHON) scripts/audit_accessibilita.py
 
 docs: ## Anteprima del sito di documentazione su http://127.0.0.1:8002 (serve zensical)
 	zensical serve -a 127.0.0.1:8002

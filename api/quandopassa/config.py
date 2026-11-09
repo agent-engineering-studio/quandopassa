@@ -35,5 +35,7 @@ class Config:
         "MAPPA_TILES", "https://tile.openstreetmap.org/{z}/{x}/{y}.png"))
     mappa_attribuzione: str = field(default_factory=lambda: _env(
         "MAPPA_ATTRIBUZIONE", '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'))
+    # ricerca di indirizzi e luoghi per "come arrivo" (Nominatim o istanza dell'ente; vuoto = solo fermate)
+    geocoder: str = field(default_factory=lambda: _env("LUOGHI_GEOCODER", "https://nominatim.openstreetmap.org"))
     demo_ora: str = field(default_factory=lambda: _env("DEMO_ORA"))
     web_dist: Path = field(default_factory=lambda: _cartella("WEB_DIST", "web/dist"))

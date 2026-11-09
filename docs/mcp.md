@@ -18,7 +18,7 @@ dell'app: **non conosce segreti e non scrive nulla**.
 | `fermate_vicine` | fermate più vicine a un punto, con minuti a piedi e prossimi passaggi |
 | `prossime_partenze` | prossimi passaggi da una fermata, anche per un'ora indicata |
 | `bus_in_servizio` | bus in servizio con posizione **stimata** dall'orario e prossima fermata |
-| `come_arrivare` | da un punto a una destinazione: fermata, minuti a piedi, linea, arrivo |
+| `come_arrivare` | da un punto a una destinazione (fermata, indirizzo o luogo): soluzioni con tratti a piedi, linee, cambi, orari |
 | `orari_linea` | fermate e tracciato di una linea |
 | `chiedi_assistente` | domanda in italiano all'assistente del servizio |
 

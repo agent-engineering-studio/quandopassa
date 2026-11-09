@@ -31,7 +31,7 @@ from pathlib import Path
 
 COMUNE = "Gioia del Colle"
 BBOX = (40.74, 16.85, 40.86, 17.00)  # sud, ovest, nord, est (territorio comunale, con margine)
-UA = "quandopassa/0.1 (+https://github.com/agent-engineering-studio/quandopassa)"
+UA = "quandopassa/0.1 (+https://github.com/gzileni/quandopassa)"
 NOMINATIM = "https://nominatim.openstreetmap.org/search"
 OVERPASS = "https://overpass-api.de/api/interpreter"
 OSRM = "https://router.project-osrm.org/route/v1/driving/"
@@ -44,10 +44,13 @@ def _get(url: str, dati: bytes | None = None) -> dict | list:
     attesa = 1.1 - (time.time() - _ultima)
     if attesa > 0:
         time.sleep(attesa)
+    # solo i servizi OSM in https, mai file:// o altri schemi (per questo urlopen sotto è sicuro)
+    if not url.startswith("https://"):
+        raise ValueError(f"URL non ammesso: {url}")
     req = urllib.request.Request(url, data=dati, headers={"User-Agent": UA, "Accept-Language": "it"})
     for tentativo in range(3):
         try:
-            with urllib.request.urlopen(req, timeout=60) as r:
+            with urllib.request.urlopen(req, timeout=60) as r:  # nosec B310
                 _ultima = time.time()
                 return json.loads(r.read().decode())
         except Exception as e:  # noqa: BLE001 - riprova sui 429/504 di Overpass

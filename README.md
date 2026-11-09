@@ -28,13 +28,19 @@ Una pagina web, dal telefono o dal computer: niente app da installare, niente re
 | Apri la mappa | I bus in servizio che si muovono lungo le strade, con linea e direzione |
 | Tocchi **Usa la mia posizione** | Le fermate più vicine, i minuti a piedi e per ogni bus "fai in tempo", "affrettati" o "non fai in tempo" |
 | Apri una fermata | Il **bus in arrivo**: tra quanti minuti, a quante fermate e quanti metri, dov'è adesso |
-| Chiedi all'**assistente** *"come arrivo al cimitero?"* | Dove salire, a che ora uscire, quale linea e dove scendere |
+| Apri **Come arrivo** e scegli partenza e arrivo | Come su un navigatore: quanto camminare, quale bus, **dove cambiare**, a che ora arrivi; il viaggio sulla mappa |
+| Chiedi all'**assistente** *"come arrivo al cimitero?"* | La stessa risposta, in italiano |
 
 **Onestà sui dati.** Senza GPS a bordo il ritardo non è misurabile: l'app scrive "Ritardo: non rilevabile"
 invece di un "in orario" che non può verificare. La posizione resta sul telefono e non viene salvata.
 
+**Come arrivo** — da una fermata, un indirizzo, un luogo o un punto sulla mappa:
+
+![Come arrivo](docs/demo/quandopassa-come-arrivo.gif)
+
 → [Guida per i cittadini](https://gzileni.github.io/quandopassa/cittadini/) ·
-[video verticale](docs/demo/quandopassa-demo-verticale.mp4)
+[video verticale](docs/demo/quandopassa-demo-verticale.mp4) ·
+[video "come arrivo" verticale](docs/demo/quandopassa-come-arrivo-verticale.mp4)
 
 ---
 
@@ -53,8 +59,15 @@ invece di un "in orario" che non può verificare. La posizione resta sul telefon
 Evoluzione naturale: con un feed **GTFS-Realtime** dell'azienda di trasporto, posizioni e ritardi veri al posto
 delle stime.
 
+**Pronto per il riuso nella PA.** Licenza EUPL-1.2, `publiccode.yml` verificato dai test, `CONTRIBUTING.md`,
+`SECURITY.md`, `CHANGELOG.md`; dipendenze senza vulnerabilità note (`pip-audit`, `npm audit`); audit di
+accessibilità axe-core senza violazioni WCAG 2.1 AA (`make accessibilita`); posizione e ricerche mai salvate né
+scritte nei log.
+
 → [Benefici per il Comune](https://gzileni.github.io/quandopassa/comune/) ·
-[Il feed GTFS e le fermate](https://gzileni.github.io/quandopassa/gtfs/)
+[Il feed GTFS e le fermate](https://gzileni.github.io/quandopassa/gtfs/) ·
+[Conformità normativa](https://gzileni.github.io/quandopassa/conformita/) ·
+[Riuso e Catalogo Developers Italia](https://gzileni.github.io/quandopassa/riuso/)
 
 ---
 
@@ -70,8 +83,8 @@ make test        # suite pytest nel container
 
 Tre container, **nessun database**:
 
-- **app** (`api/` + `web/`): FastAPI con il motore GTFS (posizioni stimate, partenze, fermate vicine, ricerca,
-  percorsi a piedi + bus) e l'assistente; interfaccia React con Vite, Bootstrap Italia e Leaflet su OpenStreetMap.
+- **app** (`api/` + `web/`): FastAPI con il motore GTFS (posizioni stimate, partenze, fermate vicine, ricerca),
+  il calcolo degli itinerari con cambi (`itinerari.py`), la ricerca dei luoghi su OpenStreetMap e l'assistente; interfaccia React con Vite, Bootstrap Italia e Leaflet su OpenStreetMap.
   L'interfaccia scarica una volta l'orario del giorno e anima i bus da sola, allineata all'ora del server.
 - **inference** (`inference/`): server OpenAI-compatibile, backend `rules` (offline, predefinito) o `openai`
   (Ollama del profilo `llm`, vLLM, Azure OpenAI…). L'IA capisce la domanda, l'app calcola la risposta, l'LLM può
@@ -88,6 +101,7 @@ OSRM (lo fa anche il workflow **geocoding** a ogni modifica).
 [Architettura e API](https://gzileni.github.io/quandopassa/architettura/) ·
 [Intelligenza artificiale](https://gzileni.github.io/quandopassa/intelligenza-artificiale/) ·
 [Server MCP](https://gzileni.github.io/quandopassa/mcp/) ·
+[Installazione conforme PA](https://gzileni.github.io/quandopassa/normativa-it/) ·
 [Video e demo](https://gzileni.github.io/quandopassa/video/)
 
 ---

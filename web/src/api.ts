@@ -88,6 +88,70 @@ export interface Info {
   tracciati_stradali: boolean;
 }
 
+export interface Luogo {
+  tipo: "fermata" | "luogo" | "posizione" | "mappa";
+  id?: string;
+  nome: string;
+  dettaglio?: string;
+  lat: number;
+  lon: number;
+}
+
+export interface PuntoItinerario {
+  id?: string;
+  nome: string;
+  lat: number;
+  lon: number;
+  orario?: string;
+}
+
+export interface TrattoPiedi {
+  tipo: "piedi";
+  da: PuntoItinerario;
+  a: PuntoItinerario;
+  metri: number;
+  minuti: number;
+  partenza: string;
+  arrivo: string;
+  punti: [number, number][];
+}
+
+export interface TrattoBus {
+  tipo: "bus";
+  linea: string;
+  linea_id: string;
+  nome_linea: string;
+  colore: string;
+  corsa_id: string;
+  destinazione: string;
+  salita: PuntoItinerario;
+  discesa: PuntoItinerario;
+  fermate_intermedie: number;
+  minuti: number;
+  attesa_min: number;
+  punti: [number, number][];
+}
+
+export interface Itinerario {
+  partenza: string;
+  arrivo: string;
+  durata_min: number;
+  attesa_iniziale_min: number;
+  cambi: number;
+  a_piedi_m: number;
+  a_piedi_min: number;
+  linee: string[];
+  tratti: (TrattoPiedi | TrattoBus)[];
+}
+
+export interface RispostaItinerari {
+  ora: string;
+  origine: PuntoItinerario;
+  destinazione: PuntoItinerario;
+  opzioni: Itinerario[];
+  avviso: string;
+}
+
 export interface RispostaAssistente {
   risposta: string;
   intento: string;
@@ -131,6 +195,11 @@ export const api = {
   vicine: (lat: number, lon: number, ora?: string) =>
     richiesta<FermataVicina[]>(`/fermate/vicine?${q({ lat, lon, n: 3, ora })}`),
   partenze: (id: string, ora?: string) => richiesta<Partenza[]>(`/fermate/${id}/partenze?${q({ n: 6, ora })}`),
+  luoghi: (testo: string) => richiesta<Luogo[]>(`/luoghi?${q({ q: testo })}`),
+  itinerari: (da: Luogo, a: Luogo) =>
+    richiesta<RispostaItinerari>(
+      `/itinerari?${q({ da_lat: da.lat, da_lon: da.lon, a_lat: a.lat, a_lon: a.lon, da_nome: da.nome, a_nome: a.nome })}`,
+    ),
   assistente: (testo: string, lat?: number, lon?: number, ora?: string) =>
     richiesta<RispostaAssistente>(`/assistente?${q({ testo, lat, lon, ora })}`),
 };

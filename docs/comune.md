@@ -12,7 +12,7 @@ e l'azienda hanno già, **l'orario**, e lo trasforma in un servizio informativo 
 | Beneficio | Come |
 |---|---|
 | **Nessun hardware** | Niente GPS, SIM o centrale: le posizioni sono stimate dall'orario GTFS lungo il percorso stradale. |
-| **Informazione al cittadino** | Mappa, fermata più vicina, bus in arrivo, "fai in tempo" e assistente in italiano, dal telefono. |
+| **Informazione al cittadino** | Mappa, fermata più vicina, bus in arrivo, "fai in tempo", **come arrivo** con cambi e assistente in italiano, dal telefono. |
 | **Nessun dato personale** | Nessun account e nessun database: la posizione resta sul telefono, l'assistente non riceve dati personali. |
 | **Design della PA** | Interfaccia [Bootstrap Italia](https://italia.github.io/bootstrap-italia/) (Designers Italia), accessibile, con font e icone in locale: nessuna CDN di terzi. |
 | **Dati aperti** | Il feed GTFS è uno standard: lo stesso file alimenta QuandoPassa, Google Maps, Moovit e i portali open data. |
@@ -36,7 +36,7 @@ e l'azienda hanno già, **l'orario**, e lo trasforma in un servizio informativo 
 - **Stime, non rilevazioni.** Se il bus è in ritardo o devia, la mappa non lo sa. L'app lo dice sempre e indica
   il ritardo come "non rilevabile".
 - **Posizioni delle fermate indicative** finché non c'è il sopralluogo.
-- **Solo viaggi diretti** nel calcolo "come arrivo": senza cambi di linea.
+- **Al massimo un cambio** nel calcolo "come arrivo"; i tratti a piedi sono stimati in linea d'aria.
 
 ## Evoluzioni possibili
 

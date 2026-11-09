@@ -40,6 +40,15 @@ tracciati) e ogni secondo calcola da sola la posizione di ogni bus:
 2. interpola la distanza percorsa in proporzione al tempo trascorso tra le due fermate;
 3. colloca il bus a quella distanza lungo il tracciato stradale (`shapes.txt`) e ne ricava la direzione.
 
+## Come arrivo: il calcolo degli itinerari
+
+`itinerari.py` cerca, per ogni fermata entro 1 km dalla partenza, i bus dei prossimi giorni: scende alla fermata da
+cui si arriva prima a destinazione (contando il tratto finale a piedi) oppure cambia una volta, con almeno un
+minuto e al massimo un'ora di attesa. Le soluzioni sono ordinate per orario di arrivo, poi per numero di cambi e
+metri a piedi; quelle che escono prima e arrivano dopo un'altra vengono scartate. "Solo a piedi" compare per
+prima quando si arriva prima che in bus, e sotto i 600 m è l'unica proposta. I tratti in bus seguono il
+tracciato stradale; quelli a piedi sono stimati in linea d'aria corretta per la tortuosità delle strade.
+
 Il **bus in arrivo** a una fermata è il primo bus in viaggio che deve ancora passarci: i minuti vengono
 dall'orario di arrivo previsto, fermate e metri dal tracciato. L'orologio dell'interfaccia è allineato a quello
 del server (`/api/v1/ora`), così non dipende dall'ora del telefono.
@@ -62,5 +71,7 @@ facoltativo `ora` (ISO 8601) calcola la risposta per un altro istante.
 | GET | `/linee` | linee con tracciati e fermate |
 | GET | `/orario?giorno` | corse e tracciati del giorno |
 | GET | `/veicoli?ora&linea` | bus in servizio con posizione stimata (`tempo_reale: false`) |
-| GET | `/percorso?lat&lon&a` | come arrivo: a piedi + bus diretto |
+| GET | `/itinerari?da_lat&da_lon&a_lat&a_lon` | come arrivo porta a porta: a piedi, bus, al massimo un cambio, solo a piedi se conviene |
+| GET | `/luoghi?q` | fermate, indirizzi e luoghi per scegliere partenza e arrivo |
+| GET | `/percorso?lat&lon&a` | bus diretto verso una fermata (compatibilità) |
 | GET | `/assistente?testo&lat&lon` | assistente IA |

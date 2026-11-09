@@ -25,6 +25,21 @@ circolano entrambe le linee. Le posizioni dei bus sono stimate dall'orario progr
 
 [:material-download: MP4 verticale](demo/quandopassa-demo-verticale.mp4){ .md-button }
 
+## Come arrivo (routing)
+
+<video class="video-demo" controls muted playsinline preload="metadata" poster="../screenshot/08_come_arrivo.png">
+  <source src="../demo/quandopassa-come-arrivo.mp4" type="video/mp4">
+</video>
+
+[:material-download: MP4](demo/quandopassa-come-arrivo.mp4){ .md-button }
+[:material-download: GIF](demo/quandopassa-come-arrivo.gif){ .md-button }
+
+<video class="video-verticale" controls muted playsinline preload="metadata" poster="../demo/come-arrivo-verticale-poster.jpg">
+  <source src="../demo/quandopassa-come-arrivo-verticale.mp4" type="video/mp4">
+</video>
+
+[:material-download: MP4 verticale](demo/quandopassa-come-arrivo-verticale.mp4){ .md-button }
+
 ## Screenshot
 
 <div class="grid screens" markdown>
@@ -37,6 +52,8 @@ circolano entrambe le linee. Le posizioni dei bus sono stimate dall'orario progr
 
 ![Assistente](screenshot/04_assistente.png)
 
+![Come arrivo](screenshot/08_come_arrivo.png)
+
 ![Servizio](screenshot/05_servizio.png)
 
 ![Telefono](screenshot/06_mobile.png)
@@ -46,12 +63,13 @@ circolano entrambe le linee. Le posizioni dei bus sono stimate dall'orario progr
 ## Rigenerare video e screenshot
 
 I video vengono registrati da Playwright, che percorre da solo l'istanza demo con una posizione simulata vicino
-alla fermata Seven, e montati con `ffmpeg`.
+alla fermata Seven (per "come arrivo", al Villaggio Azzurro), e montati con `ffmpeg`.
 
 ```bash
 pip install playwright && playwright install chromium     # serve anche ffmpeg
 make demo                                                 # istanza demo su :8001
-make video                                                # 16:9, 9:16 e screenshot in docs/
+make video                                                # demo e come arrivo, 16:9 e 9:16, screenshot
+make accessibilita                                        # audit axe-core WCAG 2.1 AA
 ```
 
 `make video` riavvia la demo prima di ogni registrazione, perché il copione trovi i bus dove se li aspetta.

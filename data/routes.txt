@@ -1,3 +1,3 @@
 route_id,agency_id,route_short_name,route_long_name,route_type,route_color,route_text_color
-A,SABATO,A,Circolare A,3,1C7ED6,FFFFFF
+A,SABATO,A,Circolare A,3,1864AB,FFFFFF
 B,SABATO,B,Circolare B,3,495057,FFFFFF

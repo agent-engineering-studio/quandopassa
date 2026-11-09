@@ -95,9 +95,15 @@ def crea_server(app: ClientApp | None = None) -> FastMCP:
 
     @mcp.tool()
     def come_arrivare(lat: float, lon: float, destinazione: str, ora: str | None = None) -> dict:
-        """Dal punto (lat, lon) alla destinazione (nome o id di fermata): fermata dove salire, minuti a piedi,
-        orario entro cui uscire, linea, discesa e arrivo. Solo viaggi diretti senza cambi."""
-        return app.get("/api/v1/percorso", lat=lat, lon=lon, a=destinazione[:100], ora=ora)
+        """Dal punto (lat, lon) alla destinazione (fermata, indirizzo o luogo del Comune): soluzioni porta a porta con
+        tratti a piedi, linee, fermate di salita e discesa, eventuale cambio con attesa, orario di uscita e di arrivo.
+        Include "solo a piedi" quando conviene. Orari dall'orario programmato."""
+        luoghi = app.get("/api/v1/luoghi", q=destinazione[:100])
+        if not luoghi:
+            raise ErroreApp(f"Destinazione \"{destinazione}\" non trovata nel territorio servito")
+        d = luoghi[0]
+        return app.get("/api/v1/itinerari", da_lat=lat, da_lon=lon, a_lat=d["lat"], a_lon=d["lon"],
+                       a_nome=d["nome"], ora=ora)
 
     @mcp.tool()
     def orari_linea(linea: str) -> dict:

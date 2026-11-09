@@ -54,6 +54,7 @@ dall'app: una riformulazione con numeri diversi viene scartata.
 | Variabile | Predefinito | Significato |
 |---|---|---|
 | `BASE_URL` | `http://localhost:8000` | Indirizzo pubblico dell'app |
+| `LUOGHI_GEOCODER` | `https://nominatim.openstreetmap.org` | "Come arrivo": ricerca di indirizzi e luoghi, fatta dal server e limitata al territorio servito. Al geocoder arriva solo il testo cercato. In esercizio meglio un'istanza Nominatim dell'ente; vuoto = solo fermate. |
 | `DEMO_ORA` | vuoto | Vuoto = **ora reale**. Solo per dimostrazioni: istante ISO (ora di Roma) da cui parte l'orologio del server, es. `2026-11-11T09:00:00`. |
 | `TZ_SERVIZIO` | `Europe/Rome` | Fuso orario del servizio |
 

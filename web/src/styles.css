@@ -26,12 +26,10 @@ html, body { overflow-x: hidden; }
 .pannello .nav-tabs { position: sticky; top: 0; z-index: 5; background: #fff; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
 .pannello .nav-tabs::-webkit-scrollbar { display: none; }
 .pannello .nav-tabs .nav-item { flex: 1 0 auto; }
-.pannello .nav-tabs .nav-link { padding: .75rem .5rem; font-size: .95rem; white-space: nowrap; justify-content: center; }
-.pannello .nav-tabs .nav-link .icon { margin-right: .35rem; }
-@media (max-width: 575.98px) {
-  .pannello .nav-tabs .nav-link { flex-direction: column; font-size: .8rem; padding: .5rem .25rem; }
-  .pannello .nav-tabs .nav-link .icon { margin: 0 0 .15rem; }
-}
+/* cinque schede: icona sopra il testo, anche da desktop, così entrano tutte nel pannello */
+.pannello .nav-tabs .nav-link { flex-direction: column; justify-content: center; white-space: nowrap;
+  font-size: .85rem; padding: .55rem .3rem; }
+.pannello .nav-tabs .nav-link .icon { margin: 0 0 .15rem; }
 
 @media (min-width: 992px) {
   .area {
@@ -121,3 +119,21 @@ html, body { overflow-x: hidden; }
 .leaflet-marker-icon.bus-icona { transition: transform 0.9s linear; }
 .leaflet-zoom-anim .leaflet-marker-icon.bus-icona { transition: none; }
 .leaflet-container { font-family: "Titillium Web", system-ui, sans-serif; }
+
+/* come arrivo */
+.come-arrivo-campi { display: grid; grid-template-columns: 1fr; gap: .5rem; position: relative; }
+.come-arrivo-campi .scambia { position: absolute; right: 0; top: calc(50% - 1rem); z-index: 2; width: 2rem; height: 2rem;
+  padding: 0; border-radius: 50%; background: #fff; display: inline-flex; align-items: center; justify-content: center; }
+.come-arrivo-campi .campo-luogo .cerca { margin-right: 2.5rem; }
+.campo-luogo .cerca { flex: none; }
+.soluzione { border: 1px solid #c5c7c9; border-radius: 4px; background: #fff; }
+.soluzione.aperta { border: 2px solid #0066cc; }
+.soluzione-testa { display: block; background: none; border: 0; padding: .65rem .85rem; }
+.soluzione-testa:hover, .soluzione-testa:focus-visible { background: #f2f7fc; }
+.passi { border-top: 1px solid #e3e4e6; padding: .5rem .85rem .75rem; }
+.passo { display: grid; grid-template-columns: 2.5rem 1fr; gap: .5rem; padding: .45rem 0; position: relative; }
+.passo-icona { display: flex; justify-content: center; align-items: flex-start; padding-top: .1rem; color: #33475b; }
+.passo-bus { border-left: 4px solid var(--c); margin-left: 1.1rem; padding-left: .1rem; grid-template-columns: 1.4rem 1fr; }
+.passo-bus .passo-icona { margin-left: -1.55rem; }
+.cambio { color: #7a4b00; font-weight: 600; }
+.pin-arrivo { background: none; border: none; }

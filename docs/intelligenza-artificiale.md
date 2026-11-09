@@ -22,7 +22,7 @@ non possono essere inventati dal modello.
 | Intento | Esempio | Risposta calcolata da |
 |---|---|---|
 | `prossimo` | "quando passa la B a Seven?" | prossimi passaggi dalla fermata |
-| `percorso` | "come arrivo alla stazione?" | fermata dove salire, minuti a piedi, linea, discesa |
+| `percorso` | "come arrivo alla stazione?" | lo stesso calcolo della scheda "Come arrivo": a piedi, bus, eventuale cambio |
 | `dove_bus` | "dov'è adesso la linea B?" | posizione stimata e prossima fermata |
 | `vicina` | "fermata più vicina" | fermate vicine alla posizione condivisa |
 | `orari_linea` | "orari della circolare A" | partenze dal capolinea della giornata |

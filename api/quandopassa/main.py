@@ -14,11 +14,14 @@ API pubbliche (JSON, /api/v1):
   GET  /linee                          linee con tracciati e fermate
   GET  /orario?giorno                  corse e tracciati del giorno (l'interfaccia anima i bus da sola)
   GET  /veicoli?ora                    bus in servizio con posizione stimata dall'orario
-  GET  /percorso?lat&lon&a             come arrivo: a piedi + bus diretto
+  GET  /percorso?lat&lon&a             come arrivo: a piedi + bus diretto verso una fermata
+  GET  /itinerari?da_lat&da_lon&a_lat&a_lon   come arrivo porta a porta: a piedi, bus, cambi
+  GET  /luoghi?q                       fermate, indirizzi e luoghi per scegliere partenza e arrivo
   GET  /assistente?testo&lat&lon       assistente IA
 """
 
 import logging
+import re
 from datetime import date, datetime, timedelta
 
 from fastapi import FastAPI, HTTPException, Query
@@ -29,9 +32,25 @@ from .ai import ClientIA
 from .assistente import ESEMPI, Assistente, AssistenteNonDisponibile
 from .config import Config
 from .gtfs import Orario
+from .itinerari import Pianificatore
+from .luoghi import Luoghi
 
 log = logging.getLogger("quandopassa")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+
+
+class SenzaDatiPersonali(logging.Filter):
+    """Nei log di accesso niente posizione né testo delle domande: restano percorso, esito e orario (GDPR art. 5.1.c)."""
+
+    _rx = re.compile(r"\b(\w*lat|\w*lon|testo|q|da_nome|a_nome)=[^&\s\"]*")
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if isinstance(record.args, tuple):
+            record.args = tuple(self._rx.sub(r"\1=***", a) if isinstance(a, str) else a for a in record.args)
+        return True
+
+
+logging.getLogger("uvicorn.access").addFilter(SenzaDatiPersonali())
 
 
 class Orologio:
@@ -54,6 +73,8 @@ def create_app(cfg: Config | None = None, ia: ClientIA | None = None) -> FastAPI
     orario = Orario(cfg.gtfs_dir, cfg.fuso)
     ia = ia or ClientIA(cfg.inference_url)
     orologio = Orologio(orario.fuso, cfg.demo_ora)
+    pianificatore = Pianificatore(orario)
+    luoghi = Luoghi(orario, cfg.geocoder, cfg.comune.removeprefix("Comune di ").strip())
     assistente = Assistente(cfg, orario, ia)
     log.info("feed %s: %s fermate (%s provvisorie), %s corse", cfg.gtfs_dir, len(orario.fermate),
              orario.info()["fermate_provvisorie"], len(orario.corse))
@@ -160,6 +181,19 @@ def create_app(cfg: Config | None = None, ia: ClientIA | None = None) -> FastAPI
         if not dest:
             raise HTTPException(404, f"Nessuna fermata corrisponde a \"{a}\"")
         return {"destinazione": dest[0], "opzioni": orario.percorso(lat, lon, [d["id"] for d in dest], istante(ora))}
+
+    # ---------------------------------------------------------- come arrivo
+    @app.get("/api/v1/itinerari")
+    def itinerari(da_lat: float = Query(..., ge=-90, le=90), da_lon: float = Query(..., ge=-180, le=180),
+                  a_lat: float = Query(..., ge=-90, le=90), a_lon: float = Query(..., ge=-180, le=180),
+                  da_nome: str = Query("Partenza", max_length=120), a_nome: str = Query("Destinazione", max_length=120),
+                  ora: str | None = None, n: int = Query(3, ge=1, le=6)):
+        return pianificatore.pianifica((da_lat, da_lon), (a_lat, a_lon), istante(ora), opzioni=n,
+                                       nome_origine=da_nome, nome_destinazione=a_nome)
+
+    @app.get("/api/v1/luoghi")
+    def cerca_luoghi(q: str = Query(..., min_length=2, max_length=100)):
+        return luoghi.cerca(q)
 
     # ---------------------------------------------------------- assistente
     @app.get("/api/v1/assistente")

@@ -1,7 +1,8 @@
 # Scheda per il Catalogo del software di Developers Italia.
+# Validare con l'editor ufficiale: https://publiccode-editor.developers.italia.it/
 publiccodeYmlVersion: "0.4"
 name: QuandoPassa
-url: "https://github.com/agent-engineering-studio/quandopassa.git"
+url: "https://github.com/gzileni/quandopassa.git"
 landingURL: "https://gzileni.github.io/quandopassa/"
 releaseDate: "2026-11-09"
 softwareVersion: "0.1.0"
@@ -26,10 +27,15 @@ description:
     screenshots:
       - docs/screenshot/01_mappa.png
       - docs/screenshot/03_fermata.png
+      - docs/screenshot/08_come_arrivo.png
       - docs/screenshot/06_mobile.png
     features:
       - Posizione dei bus stimata dall'orario GTFS, animata lungo il tracciato
       - Fermata più vicina con minuti a piedi e indicazione "fai in tempo"
+      - Bus in arrivo alla fermata con minuti stimati, fermate e metri mancanti
+      - Come arrivo porta a porta con tratti a piedi, bus e cambi, da fermate, indirizzi e luoghi
+      - Interfaccia Bootstrap Italia responsive e accessibile, senza CDN di terzi
+      - Nessun account e nessun database, API JSON aperte documentate in OpenAPI
       - Assistente IA con backend offline deterministico e LLM opzionale
       - Server MCP per l'integrazione con assistenti e agenti
       - Geocoding delle fermate e tracciati stradali da OpenStreetMap
@@ -47,6 +53,7 @@ localisation:
 IT:
   countryExtensionVersion: "1.0"
   conforme:
+    lineeGuidaDesign: true
     gdpr: true
   riuso:
-    codiceIPA: ""
+    codiceIPA: ""   # vuoto finché il software non è di proprietà di una PA

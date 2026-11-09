@@ -57,7 +57,26 @@ Toccando il riquadro il bus viene evidenziato sulla mappa. Sotto trovi i prossim
 
 </div>
 
-## 4. Chiedi all'assistente
+## 4. Come arrivo
+
+Nella scheda **Come arrivo** scegli la partenza (la tua posizione, una fermata, un indirizzo, un luogo o un punto
+toccando la mappa) e l'arrivo. QuandoPassa ti propone le soluzioni in ordine di arrivo, come un navigatore:
+
+- quanto **camminare** fino alla fermata e da quale fermata salire;
+- **quale bus** prendere e a che ora, dove scendere;
+- se serve, **dove cambiare** e quanto attendere (per esempio dalla B alla A a Seven);
+- **solo a piedi**, quando si arriva prima che aspettando il bus.
+
+Toccando una soluzione vedi i passi uno per uno e il viaggio sulla mappa: a piedi tratteggiato, in bus con il
+colore della linea. Dalla scheda di una fermata, **Portami qui** la imposta come destinazione.
+
+![Come arrivo: bus B, cambio a Seven, bus A](screenshot/08_come_arrivo.png)
+
+<video class="video-verticale" controls muted playsinline preload="metadata" poster="../demo/come-arrivo-verticale-poster.jpg">
+  <source src="../demo/quandopassa-come-arrivo-verticale.mp4" type="video/mp4">
+</video>
+
+## 5. Chiedi all'assistente
 
 Nella scheda **Chiedi** puoi scrivere come parleresti a una persona:
 
