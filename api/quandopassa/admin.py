@@ -176,11 +176,14 @@ class AlertBody(BaseModel):
 
 # ===================================================================== sessione
 class SessionSigner:
-    """Token di sessione firmato con HMAC: utente, scadenza, token CSRF, impronta della password."""
+    """Token di sessione firmato con HMAC: utente, scadenza, token CSRF, impronta della password.
 
-    def __init__(self, secret: bytes, password_hash: str):
+    L'impronta cambia quando cambia la password: le sessioni aperte con quella vecchia non valgono più.
+    """
+
+    def __init__(self, secret: bytes, credential: str):
         self.secret = secret
-        self.fingerprint = hashlib.sha256(password_hash.encode()).hexdigest()[:16]
+        self.fingerprint = hmac.new(secret, credential.encode(), hashlib.sha256).hexdigest()[:16]
 
     def _sign(self, payload: bytes) -> str:
         return base64.urlsafe_b64encode(hmac.new(self.secret, payload, hashlib.sha256).digest()).decode().rstrip("=")
@@ -390,7 +393,12 @@ def create_admin_router(state) -> APIRouter:
     secret = cfg.admin_secret.encode() if cfg.admin_secret else secrets.token_bytes(32)
     if not cfg.admin_secret:
         log.warning("ADMIN_SECRET vuoto: chiave di sessione casuale, al riavvio bisogna rifare l'accesso")
-    signer = SessionSigner(secret, cfg.admin_password_hash)
+    signer = SessionSigner(secret, cfg.admin_credential)
+
+    def password_ok(password: str) -> bool:
+        if cfg.admin_password_hash:
+            return verify_password(password, cfg.admin_password_hash)
+        return hmac.compare_digest(password.encode(), cfg.admin_password.encode())
     limiter = LoginLimiter()
     ready = {"ok": False, "error": ""}
 
@@ -455,9 +463,9 @@ def create_admin_router(state) -> APIRouter:
             raise HTTPException(429, f"Troppi tentativi: riprovare tra {wait // 60 + 1} minuti",
                                 headers={"Retry-After": str(wait)})
         # la password si verifica sempre, anche con l'utente sbagliato: stessa durata della risposta
-        password_ok = verify_password(body.password, cfg.admin_password_hash)
-        user_ok = hmac.compare_digest(body.username.strip().lower(), cfg.admin_user.lower())
-        if not (password_ok and user_ok):
+        right_password = password_ok(body.password)
+        right_user = hmac.compare_digest(body.username.strip().lower().encode(), cfg.admin_user.lower().encode())
+        if not (right_password and right_user):
             limiter.failed(address)
             log.warning("accesso al backoffice non riuscito")
             raise HTTPException(401, "Utente o password non corretti")

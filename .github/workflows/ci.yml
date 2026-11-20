@@ -5,7 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: cp .env.example .env
+      - run: make env
       - run: docker compose --profile test build test
       - run: docker compose --profile test run --rm test
   riuso:
@@ -32,5 +32,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: cp .env.example .env
+      - run: make env
       - run: docker compose build app inference mcp

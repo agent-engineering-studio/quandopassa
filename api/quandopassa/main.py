@@ -331,8 +331,8 @@ def create_app(cfg: Config | None = None, ia: ClientIA | None = None) -> FastAPI
         from .admin import create_admin_router
 
         app.include_router(create_admin_router(s))
-    elif cfg.admin_user:
-        log.warning("Backoffice non attivo: servono DATA_DIR, DATABASE_URL, ADMIN_USER e ADMIN_PASSWORD_HASH")
+    else:
+        log.error("Backoffice non attivo: %s (lanciare make env)", cfg.admin_problem)
 
     @app.middleware("http")
     async def admin_headers(request: Request, call_next):
@@ -350,8 +350,7 @@ def create_app(cfg: Config | None = None, ia: ClientIA | None = None) -> FastAPI
 
     @app.api_route("/api/admin/{rest:path}", methods=["GET", "POST", "PUT", "DELETE"], include_in_schema=False)
     def admin_disabled(rest: str):
-        raise HTTPException(404, "Backoffice non attivo: impostare DATA_DIR, DATABASE_URL, ADMIN_USER e "
-                                 "ADMIN_PASSWORD_HASH")
+        raise HTTPException(404, f"Backoffice non attivo: {cfg.admin_problem}")
 
     # ---------------------------------------------------------- interfaccia React (pubblica e /admin)
     dist = cfg.web_dist

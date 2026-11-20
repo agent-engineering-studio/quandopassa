@@ -74,20 +74,21 @@ dall'app: una riformulazione con numeri diversi viene scartata.
 L'[istanza demo](installazione.md#istanza-demo) imposta da sé `DEMO_ORA` (variabile `DEMO_ORA_ISTANZA_DEMO`
 nel `.env` per cambiarla), senza toccare l'app principale.
 
-## Backoffice
+## Backoffice e database
 
-Spento finché `ADMIN_USER` è vuoto. Il modo più semplice per attivarlo è `make backoffice` (Docker) o
-`sudo ./deploy/install.sh --backoffice` (macchina virtuale), che compilano queste righe. Vedi
+Il backoffice è sempre attivo. `make env` (lanciato anche da `make up`) completa le righe vuote: chiede la
+password o, senza terminale, la genera. Sulla macchina virtuale lo fa `deploy/install.sh`. Vedi
 [Backoffice](backoffice.md).
 
 | Variabile | Predefinito | Significato |
 |---|---|---|
-| `ADMIN_USER` | vuoto | Utente del backoffice; vuoto = backoffice spento |
-| `ADMIN_PASSWORD_HASH` | vuoto | Hash scrypt della password (`make password`); mai la password in chiaro |
-| `ADMIN_SECRET` | vuoto | Chiave casuale che firma le sessioni (almeno 32 caratteri); vuota = nuova a ogni avvio |
-| `DATA_DIR` | vuoto | Cartella scrivibile con il feed generato, le impostazioni e il logo (Docker: `/srv/dati`, VM: `/var/lib/quandopassa`). Con `DATA_DIR` l'app legge il feed da qui e non più da `GTFS_DIR`, che serve solo al primo avvio. |
-| `DATABASE_URL` | vuoto | Connessione a Postgres, es. `postgresql://quandopassa:PASSWORD@db:5432/quandopassa` |
-| `POSTGRES_PASSWORD` | vuoto | Password del database nel profilo Docker `backoffice` (uguale a quella in `DATABASE_URL`) |
+| `ADMIN_USER` | `admin` | Utente del backoffice |
+| `ADMIN_PASSWORD` | generata | Password del backoffice, almeno 12 caratteri, senza spazi né `$ " ' # \ `` ` ``. Cambiarla: `make password` o `sudo quandopassa password` |
+| `ADMIN_PASSWORD_HASH` | vuoto | In alternativa alla password in chiaro: il suo hash scrypt (`python -m quandopassa.password`), che ha la precedenza |
+| `ADMIN_SECRET` | generata | Chiave casuale che firma le sessioni (almeno 32 caratteri) |
+| `POSTGRES_PASSWORD` | generata | Password del database Postgres in Docker |
+| `DATA_DIR` | Docker: `/srv/dati` | Cartella scrivibile con il feed generato, le impostazioni e il logo (sulla VM `/var/lib/quandopassa`). L'app legge il feed da qui; `GTFS_DIR` serve solo al primo avvio. |
+| `DATABASE_URL` | Docker: servizio `db` | Connessione a Postgres; in Docker vuota vale `postgresql://quandopassa:POSTGRES_PASSWORD@db:5432/quandopassa` |
 | `OSRM_URL` | server OSRM pubblico | Calcolo dei tracciati stradali delle linee dal backoffice. Il server pubblico è solo per prove: in esercizio un'istanza dell'ente, oppure vuoto (funzione spenta). |
 
 Le impostazioni dell'intestazione, della mappa, della ricerca dei luoghi e dei biglietti modificate dal backoffice

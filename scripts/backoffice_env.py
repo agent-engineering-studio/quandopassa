@@ -1,9 +1,11 @@
-"""Attiva il backoffice nel file .env per docker compose: utente, password, chiavi e database.
+"""Completa il file .env con le credenziali del backoffice e del database (lo usano `make env` e `make up`).
 
-    python scripts/backoffice_env.py [.env]          (lo usa `make backoffice`)
+    python scripts/backoffice_env.py [.env]              aggiunge solo quello che manca
+    python scripts/backoffice_env.py [.env] --password   cambia la password del backoffice
 
-Chiede utente e password (la password non viene salvata: nel .env va solo il suo hash), genera la chiave delle
-sessioni e la password di Postgres se mancano, e imposta DATA_DIR e DATABASE_URL per il profilo "backoffice".
+Il backoffice è sempre attivo: servono ADMIN_USER e ADMIN_PASSWORD (in chiaro nel .env, almeno 12 caratteri),
+ADMIN_SECRET (chiave delle sessioni) e POSTGRES_PASSWORD. Se manca la password la chiede; senza terminale
+(automazioni, CI) la genera e la stampa una volta. Non tocca gli altri valori del file.
 """
 from __future__ import annotations
 
@@ -12,13 +14,7 @@ import secrets
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "api"))
-
-from quandopassa.password import MIN_LENGTH, hash_password  # noqa: E402
-
-
-def read_env(path: Path) -> list[str]:
-    return path.read_text(encoding="utf-8").splitlines() if path.exists() else []
+MIN_LENGTH = 12
 
 
 def current_value(lines: list[str], key: str) -> str:
@@ -36,36 +32,62 @@ def set_value(lines: list[str], key: str, value: str) -> list[str]:
     return [*lines, f"{key}={value}"]
 
 
-def main() -> None:
-    path = Path(sys.argv[1] if len(sys.argv) > 1 else ".env")
-    lines = read_env(path)
-    if not lines:
-        sys.exit(f"{path} non trovato: creare prima il file con  make env")
-
-    user = input(f"Utente del backoffice [{current_value(lines, 'ADMIN_USER') or 'editor'}]: ").strip()
-    user = user or current_value(lines, "ADMIN_USER") or "editor"
-    password = getpass.getpass(f"Password (almeno {MIN_LENGTH} caratteri; invio = non cambiarla): ")
-    if password:
+def ask_password(user: str) -> str:
+    while True:
+        password = getpass.getpass(f"Password del backoffice per «{user}» (almeno {MIN_LENGTH} caratteri): ")
         if len(password) < MIN_LENGTH:
-            sys.exit("Password troppo corta")
-        if getpass.getpass("Ripeti la password: ") != password:
-            sys.exit("Le password non coincidono")
-        lines = set_value(lines, "ADMIN_PASSWORD_HASH", hash_password(password))
-    elif not current_value(lines, "ADMIN_PASSWORD_HASH"):
-        sys.exit("Serve una password")
+            print("Troppo corta, riprova.")
+        elif getpass.getpass("Ripeti la password: ") != password:
+            print("Le password non coincidono, riprova.")
+        elif any(c in password for c in "$\"'#\\`") or any(c.isspace() for c in password):
+            print("Evita spazi e i caratteri $ \" ' # \\ ` (il .env li interpreta), riprova.")
+        else:
+            return password
 
-    lines = set_value(lines, "ADMIN_USER", user)
+
+def main(argv: list[str]) -> None:
+    change = "--password" in argv
+    args = [a for a in argv if not a.startswith("--")]
+    path = Path(args[0] if args else ".env")
+    if not path.exists():
+        sys.exit(f"{path} non trovato: crearlo con  make env")
+    lines = path.read_text(encoding="utf-8").splitlines()
+    interactive = sys.stdin.isatty()
+    changed: list[str] = []
+
+    user = current_value(lines, "ADMIN_USER")
+    if not user:
+        user = "admin"
+        if interactive:
+            user = input("Utente del backoffice [admin]: ").strip() or "admin"
+        lines = set_value(lines, "ADMIN_USER", user)
+        changed.append("ADMIN_USER")
+
+    generated = ""
+    if change or (not current_value(lines, "ADMIN_PASSWORD") and not current_value(lines, "ADMIN_PASSWORD_HASH")):
+        if interactive:
+            password = ask_password(user)
+        else:
+            password = generated = secrets.token_urlsafe(15)
+        lines = set_value(lines, "ADMIN_PASSWORD", password)
+        if current_value(lines, "ADMIN_PASSWORD_HASH"):
+            lines = set_value(lines, "ADMIN_PASSWORD_HASH", "")  # l'hash avrebbe la precedenza
+        changed.append("ADMIN_PASSWORD")
+
     if len(current_value(lines, "ADMIN_SECRET")) < 32:
         lines = set_value(lines, "ADMIN_SECRET", secrets.token_urlsafe(48))
-    db_password = current_value(lines, "POSTGRES_PASSWORD") or secrets.token_urlsafe(24)
-    lines = set_value(lines, "POSTGRES_PASSWORD", db_password)
-    lines = set_value(lines, "DATA_DIR", current_value(lines, "DATA_DIR") or "/srv/dati")
-    if not current_value(lines, "DATABASE_URL"):
-        lines = set_value(lines, "DATABASE_URL", f"postgresql://quandopassa:{db_password}@db:5432/quandopassa")
-    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
-    path.chmod(0o600)
-    print(f"Backoffice configurato in {path} per l'utente «{user}».")
+        changed.append("ADMIN_SECRET")
+    if not current_value(lines, "POSTGRES_PASSWORD"):
+        lines = set_value(lines, "POSTGRES_PASSWORD", secrets.token_urlsafe(24))
+        changed.append("POSTGRES_PASSWORD")
+
+    if changed:
+        path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        path.chmod(0o600)
+        print(f"{path}: impostati {', '.join(changed)}")
+    if generated:
+        print(f"Password del backoffice generata per «{user}»: {generated}  (è nel .env, ADMIN_PASSWORD)")
 
 
 if __name__ == "__main__":
-    main()
+    main(sys.argv[1:])

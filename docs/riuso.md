@@ -22,7 +22,7 @@ il codice IPA dell'ente (per Gioia del Colle `c_e038`) e gli enti che lo usano c
 
 ## Checklist di pubblicazione
 
-- [x] Repository pubblico: `github.com/gzileni/quandopassa`
+- [x] Repository pubblico: `github.com/agent-engineering-studio/quandopassa`
 - [x] Licenza EUPL-1.2, raccomandata dalla guida per la PA
 - [x] README, documentazione tecnica e istruzioni di installazione (questo sito)
 - [x] `CONTRIBUTING.md`, `CHANGELOG.md`, `SECURITY.md`
@@ -50,7 +50,7 @@ testo sui biglietti nel file `.env` (vedi [Configurazione](configurazione.md) e 
 **Dati aperti.** Lo stesso feed GTFS alimenta QuandoPassa e può essere pubblicato sul portale open data del
 Comune e sul punto di accesso nazionale ai dati del trasporto, così le app di mobilità lo riprendono.
 
-**Ospitalità.** QuandoPassa non conserva dati dei cittadini (il database c'è solo con il backoffice e contiene i dati del servizio), ma resta un servizio della PA: va
+**Ospitalità.** QuandoPassa non conserva dati dei cittadini (il database del backoffice contiene solo i dati del servizio), ma resta un servizio della PA: va
 ospitato su infrastrutture o servizi cloud **qualificati ACN**. Se un fornitore lo offre come servizio SaaS, quel
 servizio deve essere qualificato.
 

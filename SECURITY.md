@@ -17,8 +17,9 @@ Controlli da eseguire a ogni rilascio:
 
 Scelte di progetto rilevanti per la sicurezza:
 
-- senza backoffice: nessun database, nessun account, nessun segreto applicativo;
-- con il backoffice: un solo utente con password salvata come hash scrypt nel `.env`, sessione in cookie
+- nessun account né dato dei cittadini; il database contiene solo i dati del servizio;
+- backoffice: un solo utente con password nel `.env` (protetto, permessi 600/640; in alternativa solo l'hash
+  scrypt), sessione in cookie
   `HttpOnly`/`SameSite=Strict` firmato, token CSRF su ogni modifica, blocco dopo 5 tentativi, registro delle
   modifiche; credenziali e configurazione di sistema non modificabili dal web; logo solo immagini senza script;
 - container non-root; il server di inferenza non è esposto fuori dalla rete di Compose; il server MCP ascolta

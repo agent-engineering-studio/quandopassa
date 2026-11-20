@@ -10,7 +10,7 @@ description: Avviare QuandoPassa con Docker o su una macchina virtuale Linux, re
 Servono Docker con Compose e `make`.
 
 ```bash
-git clone https://github.com/gzileni/quandopassa.git
+git clone https://github.com/agent-engineering-studio/quandopassa.git
 cd quandopassa
 make up            # crea .env da .env.example se manca, costruisce e avvia
 ```
@@ -25,9 +25,8 @@ Comandi utili (`make` da solo mostra l'elenco):
 
 | Comando | Cosa fa |
 |---|---|
-| `make up` | Costruisce e avvia app, inferenza e MCP (e Postgres, se il backoffice è attivo) |
-| `make backoffice` | Attiva il [backoffice](backoffice.md): chiede utente e password, prepara Postgres e avvia |
-| `make password` | Hash di una nuova password del backoffice |
+| `make up` | Completa il `.env` (al primo avvio chiede la password del backoffice), costruisce e avvia app, inferenza, MCP e Postgres |
+| `make password` | Cambia la password del [backoffice](backoffice.md) nel `.env` e riavvia l'app |
 | `make up-llm` | Come `up`, con un LLM locale (Ollama, profilo `llm`) |
 | `make down` | Ferma i container |
 | `make logs S=app` | Log di un servizio |
@@ -45,11 +44,11 @@ Supporta **Debian 12+, Ubuntu 22.04+, RHEL / Rocky / AlmaLinux 8+ e Fedora**, su
 
 ### Requisiti minimi
 
-| | Solo app pubblica | Con backoffice (Postgres) | Con LLM locale (`--llm`) |
-|---|---|---|---|
-| CPU | 1 vCPU | 2 vCPU | 4 vCPU |
-| RAM | 2 GB (1 GB basta dopo l'installazione) | 2 GB | 8 GB |
-| Disco | 10 GB | 20 GB (backup compresi) | 30 GB |
+| | App e backoffice | Con LLM locale (`--llm`) |
+|---|---|---|
+| CPU | 2 vCPU | 4 vCPU |
+| RAM | 2 GB (consigliati 4 GB) | 8 GB |
+| Disco | 20 GB (backup compresi) | 30 GB |
 
 - Sistema operativo a 64 bit con systemd: Debian 12 o 13, Ubuntu 22.04 o 24.04 LTS, RHEL / Rocky / AlmaLinux 8
   o 9, Fedora. Meglio un'installazione pulita, senza altri siti web sulla porta 80.
@@ -62,10 +61,9 @@ Supporta **Debian 12+, Ubuntu 22.04+, RHEL / Rocky / AlmaLinux 8+ e Fedora**, su
 ### Installare
 
 ```bash
-git clone https://github.com/gzileni/quandopassa.git
+git clone https://github.com/agent-engineering-studio/quandopassa.git
 cd quandopassa
-sudo ./deploy/install.sh                       # app su http://IP-della-VM (nginx sulla porta 80)
-sudo ./deploy/install.sh --backoffice          # + backoffice /admin con Postgres e backup giornaliero
+sudo ./deploy/install.sh                       # app e backoffice su http://IP-della-VM (nginx sulla porta 80)
 ```
 
 Con un nome pubblico e il certificato HTTPS di Let's Encrypt (il DNS deve già puntare alla VM e la porta 80
@@ -88,9 +86,9 @@ nginx e il firewall, e alla fine controlla che tutto risponda.
 | `quandopassa-app`, `-inference`, `-mcp` (e `-demo`) | Servizi systemd raccolti in `quandopassa.target`, non-root, con hardening |
 | `/etc/nginx/conf.d/quandopassa.conf` | Reverse proxy con rate limiting sulle API e log senza query string (niente coordinate) |
 | `/var/log/quandopassa-install.log` | Log dell'installazione |
-| `/var/lib/quandopassa` | Con `--backoffice`: feed generato, impostazioni e logo (scrivibile solo dal servizio) |
-| database `quandopassa` | Con `--backoffice`: Postgres locale, accesso dal socket per l'utente di sistema, senza password |
-| `/var/backups/quandopassa` | Con `--backoffice`: backup notturno di database e dati, ultimi 14 giorni |
+| `/var/lib/quandopassa` | Feed generato dal backoffice, impostazioni e logo (scrivibile solo dal servizio) |
+| database `quandopassa` | Postgres locale del backoffice, accesso dal socket per l'utente di sistema, senza password |
+| `/var/backups/quandopassa` | Backup notturno di database e dati, ultimi 14 giorni |
 
 Le porte restano le stesse della versione Docker: app su `127.0.0.1:8000` dietro nginx, inferenza su
 `127.0.0.1:8080`, MCP su `127.0.0.1:8090`; dall'esterno è aperta solo la porta 80 (e 443 con HTTPS).
@@ -101,8 +99,7 @@ Le porte restano le stesse della versione Docker: app su `127.0.0.1:8000` dietro
 |---|---|
 | `--dominio NOME` | nginx risponde a quel nome e `BASE_URL` diventa `http(s)://NOME` |
 | `--email INDIRIZZO` | con `--dominio`: certificato HTTPS Let's Encrypt e redirect da HTTP |
-| `--backoffice` / `--senza-backoffice` | attiva o spegne il [backoffice](backoffice.md): Postgres locale, password (chiesta, o generata e mostrata una volta), backup notturno |
-| `--utente-admin NOME` | nome dell'utente del backoffice (predefinito `editor`) |
+| `--utente-admin NOME` | nome dell'utente del [backoffice](backoffice.md) (predefinito `admin`); la password si chiede alla prima installazione (o si genera e si mostra) e sta in `ADMIN_PASSWORD` |
 | `--admin-da RETE` | apre `/admin` solo dalla rete indicata, es. `10.0.0.0/8` (ripetibile) |
 | `--senza-nginx` | niente reverse proxy: l'app ascolta direttamente su `0.0.0.0:8000` |
 | `--llm` / `--senza-llm` | installa Ollama con il modello di `LLM_MODEL` e usa `INFERENCE_BACKEND=openai` / torna al motore a regole |
@@ -168,6 +165,6 @@ reale. L'orologio parte dall'avvio del container: `docker compose restart demo` 
   consente un uso intensivo (`MAPPA_TILES`).
 - Tenere `INFERENCE_BACKEND=rules` finché non è stata fatta la valutazione prevista dalle Linee guida AgID per
   un LLM. Vedi [Intelligenza artificiale](intelligenza-artificiale.md).
-- Senza backoffice non ci sono database né segreti applicativi. Con il backoffice: proteggere il `.env`
-  (hash della password, chiave delle sessioni, connessione al database), pubblicare `/admin` solo in HTTPS,
-  meglio solo dalla rete dell'ente, e conservare i backup. L'app non salva comunque dati dei cittadini.
+- Proteggere il `.env` (password del backoffice, chiave delle sessioni, password del database) e le sue copie,
+  pubblicare `/admin` solo in HTTPS, meglio solo dalla rete dell'ente, e conservare i backup. L'app non salva
+  comunque dati dei cittadini.

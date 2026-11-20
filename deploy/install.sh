@@ -2,8 +2,7 @@
 # =====================================================================================
 #  QuandoPassa – installazione chiavi in mano su una macchina Linux SENZA Docker
 #
-#    sudo ./deploy/install.sh                               app su http://IP-della-VM (nginx sulla porta 80)
-#    sudo ./deploy/install.sh --backoffice                  + backoffice /admin con Postgres
+#    sudo ./deploy/install.sh                               app e backoffice su http://IP-della-VM (nginx, porta 80)
 #    sudo ./deploy/install.sh --dominio bus.comune.it --email it@comune.it    con HTTPS Let's Encrypt
 #    sudo ./deploy/install.sh --aiuto                       tutte le opzioni
 #
@@ -18,7 +17,7 @@
 #      in quandopassa.target, non-root e con hardening systemd
 #    - nginx come reverse proxy con rate limiting e log senza query string (coordinate), HTTPS opzionale
 #    - firewall (ufw o firewalld, se attivi) e SELinux (se attivo)
-#    - opzionale: backoffice con Postgres locale e backup giornaliero (--backoffice)
+#    - backoffice /admin con Postgres locale e backup giornaliero
 #    - opzionale: Ollama con un LLM locale (--llm)
 # =====================================================================================
 set -Eeuo pipefail
@@ -30,7 +29,7 @@ CONF_DIR=/etc/quandopassa
 DATA_DIR=/var/lib/quandopassa
 BACKUP_DIR=/var/backups/quandopassa
 SERVICE_USER=quandopassa
-REPO_URL=https://github.com/gzileni/quandopassa.git
+REPO_URL=https://github.com/agent-engineering-studio/quandopassa.git
 REPO_REF=main
 NODE_MAJOR=22
 OLLAMA_PIN=0.12.11
@@ -45,8 +44,7 @@ DOMAIN=
 EMAIL=
 LLM=no
 DEMO=no
-BACKOFFICE=no
-ADMIN_NAME=editor
+ADMIN_NAME="admin"
 ADMIN_ALLOW=
 UNINSTALL=no
 SKIP_PACKAGES=no
@@ -72,11 +70,8 @@ uso: sudo $0 [opzioni]
   --dominio NOME        nome pubblico del servizio (es. bus.comune.example.it): nginx risponde a quel nome
                         e BASE_URL diventa https://NOME (o http:// senza --email)
   --email INDIRIZZO     con --dominio: certificato HTTPS Let's Encrypt con certbot (rinnovo automatico)
-  --backoffice          backoffice /admin per l'ufficio trasporti: Postgres locale, dati in $DATA_DIR,
-                        backup giornaliero in $BACKUP_DIR; chiede la password (o la genera)
-  --utente-admin NOME   nome dell'utente del backoffice (predefinito: $ADMIN_NAME)
+  --utente-admin NOME   nome dell'utente del backoffice /admin (predefinito: $ADMIN_NAME)
   --admin-da RETE       apre /admin solo da questa rete, es. 10.0.0.0/8 (ripetibile; predefinito: da ovunque)
-  --senza-backoffice    spegne il backoffice (il database resta)
   --senza-nginx         niente reverse proxy: l'app ascolta direttamente su 0.0.0.0:$APP_PORT
   --con-nginx           riattiva nginx dopo un'installazione con --senza-nginx
   --llm                 installa Ollama $OLLAMA_PIN con il modello di LLM_MODEL e usa INFERENCE_BACKEND=openai
@@ -90,6 +85,10 @@ uso: sudo $0 [opzioni]
   --salta-pacchetti     non installa pacchetti di sistema (ambienti senza accesso ai repository)
   --disinstalla         rimuove servizi, codice, utente e sito nginx (configurazione, dati e database restano)
   --aiuto               questo messaggio
+
+Il backoffice /admin è sempre attivo: Postgres locale, dati in $DATA_DIR, backup notturno in $BACKUP_DIR.
+Utente e password stanno nella configurazione (ADMIN_USER, ADMIN_PASSWORD): la password si chiede alla prima
+installazione (o si genera e si mostra una volta); per cambiarla:  sudo quandopassa password
 
 Rilanciare lo script aggiorna l'installazione: codice, dipendenze e interfaccia vengono ricostruiti,
 la configurazione ($CONF_DIR/quandopassa.env), i dati e le scelte fatte con le opzioni restano.
@@ -108,8 +107,7 @@ while [[ $# -gt 0 ]]; do
   case $1 in
     --dominio)          DOMAIN=${2:?--dominio richiede un nome}; shift ;;
     --email)            EMAIL=${2:?--email richiede un indirizzo}; shift ;;
-    --backoffice)       BACKOFFICE=si ;;
-    --senza-backoffice) BACKOFFICE=no ;;
+    --backoffice)       ;;  # compatibilità: il backoffice è sempre attivo
     --utente-admin)     ADMIN_NAME=${2:?--utente-admin richiede un nome}; shift ;;
     --admin-da)         ADMIN_ALLOW_NEW="$ADMIN_ALLOW_NEW ${2:?--admin-da richiede una rete}"; shift ;;
     --senza-nginx)      USE_NGINX=no ;;
@@ -186,7 +184,7 @@ fi
 step "QuandoPassa – installazione senza Docker"
 info "Sistema: ${PRETTY_NAME:-$ID} ($(uname -m))"
 info "Cartella: $PREFIX   configurazione: $CONF_DIR   log: $LOG_FILE"
-info "nginx: $USE_NGINX   dominio: ${DOMAIN:-nessuno}   HTTPS: $([[ -n $EMAIL ]] && echo si || echo no)   backoffice: $BACKOFFICE   LLM: $LLM   demo: $DEMO"
+info "nginx: $USE_NGINX   dominio: ${DOMAIN:-nessuno}   HTTPS: $([[ -n $EMAIL ]] && echo si || echo no)   utente admin: $ADMIN_NAME   LLM: $LLM   demo: $DEMO"
 
 # ------------------------------------------------------------------ pacchetti
 install_packages() {
@@ -210,8 +208,7 @@ else
   command -v curl >/dev/null || BASE_PACKAGES+=(curl)
   [[ $USE_NGINX == si ]] && BASE_PACKAGES+=(nginx)
   if [[ $FAMILY == debian ]]; then
-    install_packages "${BASE_PACKAGES[@]}" python3 python3-venv
-    [[ $BACKOFFICE == si ]] && install_packages postgresql
+    install_packages "${BASE_PACKAGES[@]}" python3 python3-venv postgresql
     [[ -n $EMAIL ]] && install_packages certbot python3-certbot-nginx
   else
     install_packages "${BASE_PACKAGES[@]}"
@@ -219,7 +216,7 @@ else
     for v in 3.12 3.11; do
       if dnf list -q "python$v" >/dev/null 2>&1; then install_packages "python$v"; break; fi
     done
-    [[ $BACKOFFICE == si ]] && install_packages postgresql-server
+    install_packages postgresql-server
     if [[ -n $EMAIL ]]; then
       rpm -q epel-release >/dev/null 2>&1 || install_packages epel-release \
         || warn "EPEL non disponibile: abilitarlo a mano per certbot"
@@ -369,8 +366,8 @@ ok "configurazione pronta (BASE_URL=$(env_value BASE_URL), feed $GTFS_PATH)"
 
 # ------------------------------------------------------------------ backoffice: Postgres e credenziali
 GENERATED_PASSWORD=
-if [[ $BACKOFFICE == si ]]; then
-  step "Backoffice: database Postgres e accesso"
+step "Backoffice: database Postgres e accesso"
+{
   if [[ $FAMILY == rhel && ! -f /var/lib/pgsql/data/PG_VERSION ]]; then
     postgresql-setup --initdb >/dev/null
   fi
@@ -390,23 +387,14 @@ if [[ $BACKOFFICE == si ]]; then
   set_env ADMIN_USER "$ADMIN_NAME"
   current_secret=$(env_value ADMIN_SECRET)
   [[ ${#current_secret} -ge 32 ]] || set_env ADMIN_SECRET "$(random_secret)"
-  if [[ -z $(env_value ADMIN_PASSWORD_HASH) ]]; then
-    if [[ -t 0 ]]; then
-      while :; do
-        read -r -s -p "    Password per l'utente «$ADMIN_NAME» del backoffice (almeno 12 caratteri): " pw1; echo
-        read -r -s -p "    Ripeti la password: " pw2; echo
-        [[ $pw1 == "$pw2" && ${#pw1} -ge 12 ]] && break
-        warn "le password non coincidono o sono troppo corte, riprova"
-      done
-    else
-      pw1=$(random_secret | cut -c1-20)
-      GENERATED_PASSWORD=$pw1
-    fi
-    HASH_LINE=$(printf '%s\n' "$pw1" | (cd "$PREFIX/api" && "$VENV/bin/python" -m quandopassa.password))
-    set_env ADMIN_PASSWORD_HASH "${HASH_LINE#ADMIN_PASSWORD_HASH=}"
-    unset pw1 pw2
+  # password: la chiede (o, senza terminale, la genera) lo stesso script di `make env`
+  if [[ -z $(env_value ADMIN_PASSWORD) && -z $(env_value ADMIN_PASSWORD_HASH) ]]; then
+    "$VENV/bin/python" "$PREFIX/scripts/backoffice_env.py" "$ENV_FILE" | grep -v "Password del backoffice generata" || true
+    [[ -t 0 ]] || GENERATED_PASSWORD=$(env_value ADMIN_PASSWORD)
   fi
-  ok "accesso al backoffice per l'utente «$ADMIN_NAME»"
+  chown root:"$SERVICE_USER" "$ENV_FILE"
+  chmod 640 "$ENV_FILE"
+  ok "accesso al backoffice per l'utente «$ADMIN_NAME» (password in ADMIN_PASSWORD di $ENV_FILE)"
 
   # backup giornaliero del database e della cartella dati (ultimi 14)
   mkdir -p /usr/local/lib/quandopassa "$BACKUP_DIR"
@@ -447,11 +435,7 @@ EOF
   systemctl daemon-reload
   systemctl enable --now quandopassa-backup.timer >/dev/null 2>&1
   ok "backup giornaliero in $BACKUP_DIR (ultimi 14 giorni)"
-else
-  # backoffice spento: l'app torna a leggere GTFS_DIR, i dati restano dove sono
-  set_env ADMIN_USER ""
-  systemctl disable --now quandopassa-backup.timer >/dev/null 2>&1 || true
-fi
+}
 
 # scelte per i prossimi aggiornamenti
 cat >"$CONF_DIR/install.conf" <<EOF
@@ -462,7 +446,6 @@ DOMAIN=$DOMAIN
 EMAIL=$EMAIL
 LLM=$LLM
 DEMO=$DEMO
-BACKOFFICE=$BACKOFFICE
 ADMIN_NAME=$ADMIN_NAME
 ADMIN_ALLOW="$ADMIN_ALLOW"
 EOF
@@ -554,12 +537,9 @@ write_unit quandopassa-inference "QuandoPassa – server di inferenza (rules/LLM
   "$VENV/bin/uvicorn server:app --host 127.0.0.1 --port $INFERENCE_PORT --no-server-header"
 
 APP_EXTRA="Environment=INFERENCE_URL=http://127.0.0.1:$INFERENCE_PORT WEB_DIST=$PREFIX/web/dist"
-APP_AFTER=quandopassa-inference.service
-if [[ $BACKOFFICE == si ]]; then
-  # /var/lib/quandopassa scrivibile solo da questo servizio (il resto del sistema resta in sola lettura)
-  APP_EXTRA+=$'\n'"StateDirectory=$(basename "$DATA_DIR")"$'\n'"StateDirectoryMode=0750"
-  APP_AFTER+=" postgresql.service"
-fi
+# /var/lib/quandopassa scrivibile solo da questo servizio (il resto del sistema resta in sola lettura)
+APP_EXTRA+=$'\n'"StateDirectory=$(basename "$DATA_DIR")"$'\n'"StateDirectoryMode=0750"
+APP_AFTER="quandopassa-inference.service postgresql.service"
 write_unit quandopassa-app "QuandoPassa – app (API, interfaccia e backoffice)" api "$APP_AFTER" "$APP_EXTRA" \
   "$VENV/bin/uvicorn --factory quandopassa.main:create_app --host $APP_HOST --port $APP_PORT --proxy-headers --forwarded-allow-ips 127.0.0.1 --no-server-header"
 
@@ -591,7 +571,8 @@ cat >/usr/local/bin/quandopassa <<EOF
 #!/usr/bin/env bash
 # Comandi rapidi per QuandoPassa installato senza Docker (generato da deploy/install.sh).
 set -e
-SERVICES="quandopassa-inference quandopassa-app quandopassa-mcp\$(systemctl cat quandopassa-demo >/dev/null 2>&1 && echo ' quandopassa-demo')"
+SERVICES="quandopassa-inference quandopassa-app quandopassa-mcp"
+if systemctl cat quandopassa-demo >/dev/null 2>&1; then SERVICES="\$SERVICES quandopassa-demo"; fi
 case "\${1:-}" in
   stato)    systemctl --no-pager status \$SERVICES ;;
   log)      journalctl -f -n 200 -u "quandopassa-\${2:-app}" ;;
@@ -599,10 +580,9 @@ case "\${1:-}" in
   ferma)    systemctl stop quandopassa.target \$SERVICES ;;
   avvia)    systemctl start quandopassa.target ;;
   config)   \${EDITOR:-vi} $ENV_FILE && systemctl restart \$SERVICES && echo "configurazione applicata" ;;
-  password) line=\$(cd $PREFIX/api && $VENV/bin/python -m quandopassa.password)
-            awk -v v="\$line" 'BEGIN{f=0} index(\$0,"ADMIN_PASSWORD_HASH=")==1 {print v; f=1; next} {print} END{if(!f) print v}' \\
-              $ENV_FILE >$ENV_FILE.tmp && cat $ENV_FILE.tmp >$ENV_FILE && rm -f $ENV_FILE.tmp
-            systemctl restart quandopassa-app && echo "password del backoffice cambiata" ;;
+  password) $VENV/bin/python $PREFIX/scripts/backoffice_env.py $ENV_FILE --password
+            chown root:$SERVICE_USER $ENV_FILE && chmod 640 $ENV_FILE
+            systemctl restart quandopassa-app && echo "password del backoffice cambiata (ADMIN_PASSWORD in $ENV_FILE)" ;;
   backup)   /usr/local/lib/quandopassa/backup.sh ;;
   salute)   curl -fsS http://127.0.0.1:$APP_PORT/api/v1/health && echo ;;
   versione) cat $PREFIX/VERSIONE ;;
@@ -760,12 +740,12 @@ for _ in $(seq 30); do
 done
 [[ ${code:-000} != 000 ]] && ok "server MCP risponde" || warn "il server MCP non risponde: journalctl -u quandopassa-mcp"
 [[ $DEMO == si ]] && wait_for "http://127.0.0.1:$DEMO_PORT/api/v1/health" "istanza demo" quandopassa-demo
-if [[ $BACKOFFICE == si ]]; then
+{
   # 401 = backoffice attivo e in attesa di accesso; 404 = non attivo; 503 = database non raggiungibile
   code=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$APP_PORT/api/admin/session" || true)
   [[ $code == 401 ]] && ok "backoffice attivo" || warn "il backoffice non risponde come previsto (HTTP $code): journalctl -u quandopassa-app"
   curl -fs -o /dev/null "http://127.0.0.1:$APP_PORT/admin/" && ok "pagina del backoffice raggiungibile" || true
-fi
+}
 if [[ $USE_NGINX == si ]]; then
   curl -fs -o /dev/null -H "Host: ${DOMAIN:-localhost}" http://127.0.0.1/api/v1/health \
     && ok "nginx inoltra all'app" || warn "nginx non inoltra all'app: controllare $NGINX_CONF"
@@ -778,19 +758,19 @@ cat <<EOF
 
     App                 $BASE_URL
     Documentazione API  $BASE_URL/api/docs
-$([[ $BACKOFFICE == si ]] && echo "    Backoffice          $BASE_URL/admin/   (utente: $ADMIN_NAME$([[ -n $ADMIN_ALLOW ]] && echo ", solo da $ADMIN_ALLOW"))")
+    Backoffice          $BASE_URL/admin/   (utente: $ADMIN_NAME$([[ -n $ADMIN_ALLOW ]] && echo ", solo da $ADMIN_ALLOW"))
     Server MCP          http://127.0.0.1:$MCP_PORT/mcp   (solo dalla VM; da fuori: ssh -L $MCP_PORT:127.0.0.1:$MCP_PORT)
 $([[ $DEMO == si ]] && echo "    Istanza demo        http://127.0.0.1:$DEMO_PORT   $([[ $USE_NGINX == si ]] && echo "(da fuori: ssh -L $DEMO_PORT:127.0.0.1:$DEMO_PORT)")")
     Configurazione      $ENV_FILE    →  sudo quandopassa config
     Stato e log         sudo quandopassa stato   |   sudo quandopassa log app
-$([[ $BACKOFFICE == si ]] && echo "    Backup              ogni notte in $BACKUP_DIR   |   subito: sudo quandopassa backup")
+    Backup              ogni notte in $BACKUP_DIR   |   subito: sudo quandopassa backup
     Aggiornare          git pull nel clone, poi  sudo ./deploy/install.sh
     Disinstallare       sudo ./deploy/install.sh --disinstalla
 
 EOF
 if [[ -n $GENERATED_PASSWORD ]]; then
   warn "password generata per «$ADMIN_NAME»: $GENERATED_PASSWORD"
-  warn "annotarla ora (non viene salvata); per cambiarla: sudo quandopassa password"
+  warn "è salvata in ADMIN_PASSWORD di $ENV_FILE; per cambiarla: sudo quandopassa password"
 fi
 if [[ $NEW_ENV == si ]]; then
   warn "rivedere $ENV_FILE (o le Impostazioni del backoffice): COMUNE_NOME, INFO_BIGLIETTI, LINK_BIGLIETTI, MAPPA_TILES e LUOGHI_GEOCODER per l'esercizio"
@@ -798,7 +778,7 @@ fi
 if [[ -n $DOMAIN && -z $EMAIL ]]; then
   warn "senza --email il servizio è solo HTTP: per l'esercizio serve HTTPS (rilanciare con --email)"
 fi
-if [[ $BACKOFFICE == si && -z $EMAIL ]]; then
+if [[ -z $EMAIL ]]; then
   warn "il backoffice ha una password: in esercizio pubblicarlo solo in HTTPS (--dominio e --email)"
 fi
 exit 0

@@ -50,14 +50,32 @@ class Config:
     data_dir: Path | None = field(default_factory=lambda: _cartella("DATA_DIR", "") if _env("DATA_DIR") else None)
     database_url: str = field(default_factory=lambda: _env("DATABASE_URL"))
     admin_user: str = field(default_factory=lambda: _env("ADMIN_USER"))
-    admin_password_hash: str = field(default_factory=lambda: _env("ADMIN_PASSWORD_HASH"))
+    admin_password: str = field(default_factory=lambda: _env("ADMIN_PASSWORD"))
+    admin_password_hash: str = field(default_factory=lambda: _env("ADMIN_PASSWORD_HASH"))  # alternativa: ha la precedenza
     admin_secret: str = field(default_factory=lambda: _env("ADMIN_SECRET"))
     # tracciati stradali calcolati dal backoffice (vuoto = funzione disattivata)
     osrm_url: str = field(default_factory=lambda: _env("OSRM_URL", "https://router.project-osrm.org/route/v1/driving"))
 
     @property
+    def admin_credential(self) -> str:
+        """Hash della password se c'è, altrimenti la password del .env."""
+        return self.admin_password_hash or self.admin_password
+
+    @property
+    def admin_problem(self) -> str:
+        """Perché il backoffice non può partire ("" = può partire)."""
+        missing = [name for name, value in (("DATA_DIR", self.data_dir), ("DATABASE_URL", self.database_url),
+                                            ("ADMIN_USER", self.admin_user),
+                                            ("ADMIN_PASSWORD", self.admin_credential)) if not value]
+        if missing:
+            return f"mancano nel .env: {', '.join(missing)}"
+        if not self.admin_password_hash and len(self.admin_password) < 12:
+            return "ADMIN_PASSWORD troppo corta: almeno 12 caratteri"
+        return ""
+
+    @property
     def admin_enabled(self) -> bool:
-        return bool(self.data_dir and self.database_url and self.admin_user and self.admin_password_hash)
+        return not self.admin_problem
 
 
 # Impostazioni modificabili dal backoffice: campo di Config -> (variabile del .env, etichetta, aiuto).
