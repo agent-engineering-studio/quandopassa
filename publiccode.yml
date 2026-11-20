@@ -3,7 +3,7 @@
 publiccodeYmlVersion: "0.4"
 name: QuandoPassa
 url: "https://github.com/agent-engineering-studio/quandopassa.git"
-landingURL: "https://agent-engineering-studio.github.io/quandopassa/"
+landingURL: "https://agentengineering.it/quandopassa/"
 releaseDate: "2026-11-09"
 softwareVersion: "0.1.0"
 platforms: [web]
@@ -23,7 +23,7 @@ description:
       trova la fermata più vicina all'utente confrontando l'ora attuale con l'orario e il tempo a piedi, e indica
       se si fa in tempo a prendere il prossimo passaggio. Un assistente IA risponde in italiano su orari e percorsi
       calcolandoli dall'orario ufficiale; un server MCP espone gli stessi dati ad agenti esterni.
-    documentation: "https://agent-engineering-studio.github.io/quandopassa/"
+    documentation: "https://agentengineering.it/quandopassa/"
     screenshots:
       - docs/screenshot/01_mappa.png
       - docs/screenshot/03_fermata.png

@@ -6,7 +6,7 @@ prossimo bus e se fai in tempo a prenderlo. Con un assistente IA in italiano e u
 Open source (EUPL-1.2), riusabile da qualsiasi Comune con un feed GTFS.
 Pilota proposto: servizio urbano di **Gioia del Colle**, Circolari A e B.
 
-📖 **Documentazione completa:** https://agent-engineering-studio.github.io/quandopassa/
+📖 **Documentazione completa:** https://agentengineering.it/quandopassa/
 
 ![Demo](docs/demo/quandopassa-demo.gif)
 
@@ -40,7 +40,7 @@ invece di un "in orario" che non può verificare. La posizione resta sul telefon
 
 ![Come arrivo](docs/demo/quandopassa-come-arrivo.gif)
 
-→ [Guida per i cittadini](https://agent-engineering-studio.github.io/quandopassa/cittadini/) ·
+→ [Guida per i cittadini](https://agentengineering.it/quandopassa/cittadini/) ·
 [video verticale](docs/demo/quandopassa-demo-verticale.mp4) ·
 [video "come arrivo" verticale](docs/demo/quandopassa-come-arrivo-verticale.mp4)
 
@@ -68,11 +68,11 @@ delle stime.
 accessibilità axe-core senza violazioni WCAG 2.1 AA (`make accessibilita`); posizione e ricerche mai salvate né
 scritte nei log.
 
-→ [Benefici per il Comune](https://agent-engineering-studio.github.io/quandopassa/comune/) ·
-[Backoffice](https://agent-engineering-studio.github.io/quandopassa/backoffice/) ·
-[Il feed GTFS e le fermate](https://agent-engineering-studio.github.io/quandopassa/gtfs/) ·
-[Conformità normativa](https://agent-engineering-studio.github.io/quandopassa/conformita/) ·
-[Riuso e Catalogo Developers Italia](https://agent-engineering-studio.github.io/quandopassa/riuso/)
+→ [Benefici per il Comune](https://agentengineering.it/quandopassa/comune/) ·
+[Backoffice](https://agentengineering.it/quandopassa/backoffice/) ·
+[Il feed GTFS e le fermate](https://agentengineering.it/quandopassa/gtfs/) ·
+[Conformità normativa](https://agentengineering.it/quandopassa/conformita/) ·
+[Riuso e Catalogo Developers Italia](https://agentengineering.it/quandopassa/riuso/)
 
 ---
 
@@ -139,7 +139,7 @@ sudo ./deploy/install.sh --dominio bus.comune.it --email it@comune.it
 
 Tutte le opzioni (per esempio `--admin-da 10.0.0.0/8` per aprire il backoffice solo dalla rete dell'ente):
 `sudo ./deploy/install.sh --aiuto` →
-[Installazione su VM](https://agent-engineering-studio.github.io/quandopassa/installazione/#su-una-macchina-virtuale-linux-senza-docker)
+[Installazione su VM](https://agentengineering.it/quandopassa/installazione/#su-una-macchina-virtuale-linux-senza-docker)
 
 ### Come è fatto
 
@@ -161,13 +161,13 @@ Il feed di partenza è nella cartella `GTFS_DIR` (predefinita `data/`), copiato 
 `make gtfs` rigenera i file GTFS e `make geocode` cerca le fermate su OpenStreetMap e i tracciati stradali con
 OSRM (lo fa anche il workflow **geocoding** a ogni modifica).
 
-→ [Installazione](https://agent-engineering-studio.github.io/quandopassa/installazione/) ·
-[Configurazione](https://agent-engineering-studio.github.io/quandopassa/configurazione/) ·
-[Architettura e API](https://agent-engineering-studio.github.io/quandopassa/architettura/) ·
-[Intelligenza artificiale](https://agent-engineering-studio.github.io/quandopassa/intelligenza-artificiale/) ·
-[Server MCP](https://agent-engineering-studio.github.io/quandopassa/mcp/) ·
-[Installazione conforme PA](https://agent-engineering-studio.github.io/quandopassa/normativa-it/) ·
-[Video e demo](https://agent-engineering-studio.github.io/quandopassa/video/)
+→ [Installazione](https://agentengineering.it/quandopassa/installazione/) ·
+[Configurazione](https://agentengineering.it/quandopassa/configurazione/) ·
+[Architettura e API](https://agentengineering.it/quandopassa/architettura/) ·
+[Intelligenza artificiale](https://agentengineering.it/quandopassa/intelligenza-artificiale/) ·
+[Server MCP](https://agentengineering.it/quandopassa/mcp/) ·
+[Installazione conforme PA](https://agentengineering.it/quandopassa/normativa-it/) ·
+[Video e demo](https://agentengineering.it/quandopassa/video/)
 
 ---
 
