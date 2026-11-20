@@ -6,7 +6,7 @@ prossimo bus e se fai in tempo a prenderlo. Con un assistente IA in italiano e u
 Open source (EUPL-1.2), riusabile da qualsiasi Comune con un feed GTFS.
 Pilota proposto: servizio urbano di **Gioia del Colle**, Circolari A e B.
 
-📖 **Documentazione completa:** https://gzileni.github.io/quandopassa/
+📖 **Documentazione completa:** https://agent-engineering-studio.github.io/quandopassa/
 
 ![Demo](docs/demo/quandopassa-demo.gif)
 
@@ -40,7 +40,7 @@ invece di un "in orario" che non può verificare. La posizione resta sul telefon
 
 ![Come arrivo](docs/demo/quandopassa-come-arrivo.gif)
 
-→ [Guida per i cittadini](https://gzileni.github.io/quandopassa/cittadini/) ·
+→ [Guida per i cittadini](https://agent-engineering-studio.github.io/quandopassa/cittadini/) ·
 [video verticale](docs/demo/quandopassa-demo-verticale.mp4) ·
 [video "come arrivo" verticale](docs/demo/quandopassa-come-arrivo-verticale.mp4)
 
@@ -68,23 +68,24 @@ delle stime.
 accessibilità axe-core senza violazioni WCAG 2.1 AA (`make accessibilita`); posizione e ricerche mai salvate né
 scritte nei log.
 
-→ [Benefici per il Comune](https://gzileni.github.io/quandopassa/comune/) ·
-[Backoffice](https://gzileni.github.io/quandopassa/backoffice/) ·
-[Il feed GTFS e le fermate](https://gzileni.github.io/quandopassa/gtfs/) ·
-[Conformità normativa](https://gzileni.github.io/quandopassa/conformita/) ·
-[Riuso e Catalogo Developers Italia](https://gzileni.github.io/quandopassa/riuso/)
+→ [Benefici per il Comune](https://agent-engineering-studio.github.io/quandopassa/comune/) ·
+[Backoffice](https://agent-engineering-studio.github.io/quandopassa/backoffice/) ·
+[Il feed GTFS e le fermate](https://agent-engineering-studio.github.io/quandopassa/gtfs/) ·
+[Conformità normativa](https://agent-engineering-studio.github.io/quandopassa/conformita/) ·
+[Riuso e Catalogo Developers Italia](https://agent-engineering-studio.github.io/quandopassa/riuso/)
 
 ---
 
 ## 3. Per sviluppatori e ufficio IT
 
 ```bash
-make up          # crea .env da .env.example, costruisce e avvia
-# app       http://localhost:8000      (API: /api/docs)
-# MCP       http://localhost:8090/mcp
+make up          # crea e completa .env (chiede la password del backoffice), costruisce e avvia
+# app        http://localhost:8000      (API: /api/docs)
+# backoffice http://localhost:8000/admin/  utente e password: ADMIN_USER e ADMIN_PASSWORD nel .env
+# MCP        http://localhost:8090/mcp
 make demo        # istanza demo su :8001 con orologio fisso (mercoledì 09:00)
 make test        # suite pytest nel container
-make backoffice  # attiva il backoffice /admin (chiede utente e password, avvia Postgres)
+make password    # cambia la password del backoffice
 ```
 
 ### Installare su una macchina virtuale Linux (senza Docker)
@@ -94,11 +95,11 @@ installa tutto, configura il server web e alla fine controlla che funzioni.
 
 **1. Prepara la macchina virtuale.** Requisiti minimi:
 
-| | Solo app per i cittadini | Con il backoffice | Con l'IA locale |
-|---|---|---|---|
-| Processore | 1 vCPU | 2 vCPU | 4 vCPU |
-| Memoria | 2 GB | 2 GB | 8 GB |
-| Disco | 10 GB | 20 GB | 30 GB |
+| | App e backoffice | Con l'IA locale (facoltativa) |
+|---|---|---|
+| Processore | 2 vCPU | 4 vCPU |
+| Memoria | 2 GB (meglio 4 GB) | 8 GB |
+| Disco | 20 GB | 30 GB |
 
 - Linux a 64 bit: **Ubuntu 22.04 o 24.04**, **Debian 12 o 13**, **Rocky / AlmaLinux / RHEL 8 o 9**, Fedora.
 - Un utente che può usare `sudo`.
@@ -109,19 +110,20 @@ installa tutto, configura il server web e alla fine controlla che funzioni.
 **2. Scarica QuandoPassa e installa:**
 
 ```bash
-git clone https://github.com/gzileni/quandopassa.git
+git clone https://github.com/agent-engineering-studio/quandopassa.git
 cd quandopassa
-sudo ./deploy/install.sh --backoffice
+sudo ./deploy/install.sh
 ```
 
 Alla fine lo script mostra l'indirizzo dell'app (`http://indirizzo-della-macchina`) e del backoffice
-(`/admin/`). La password del backoffice la chiede durante l'installazione; se lo script gira senza tastiera la
-genera e la mostra **una sola volta**.
+(`/admin/`). L'utente del backoffice è `admin`; la password la chiede durante l'installazione (se lo script
+gira senza tastiera la genera e la mostra). Utente e password sono scritti nel file di configurazione
+`/etc/quandopassa/quandopassa.env` (`ADMIN_USER` e `ADMIN_PASSWORD`).
 
 **3. Con un nome e l'HTTPS** (consigliato in esercizio):
 
 ```bash
-sudo ./deploy/install.sh --backoffice --dominio bus.comune.it --email it@comune.it
+sudo ./deploy/install.sh --dominio bus.comune.it --email it@comune.it
 ```
 
 **Dopo l'installazione:**
@@ -135,13 +137,13 @@ sudo ./deploy/install.sh --backoffice --dominio bus.comune.it --email it@comune.
 | fare un backup subito | `sudo quandopassa backup` (ce n'è già uno ogni notte) |
 | aggiornare a una nuova versione | `git pull`, poi di nuovo `sudo ./deploy/install.sh` |
 
-Senza `--backoffice` si installa solo l'app per i cittadini, senza database. Tutte le opzioni:
+Tutte le opzioni (per esempio `--admin-da 10.0.0.0/8` per aprire il backoffice solo dalla rete dell'ente):
 `sudo ./deploy/install.sh --aiuto` →
-[Installazione su VM](https://gzileni.github.io/quandopassa/installazione/#su-una-macchina-virtuale-linux-senza-docker)
+[Installazione su VM](https://agent-engineering-studio.github.io/quandopassa/installazione/#su-una-macchina-virtuale-linux-senza-docker)
 
 ### Come è fatto
 
-Tre container, più **Postgres** solo se si attiva il backoffice (`make backoffice`):
+Quattro container: app, inferenza, MCP e **Postgres** per il backoffice:
 
 - **app** (`api/` + `web/`): FastAPI con il motore GTFS (posizioni stimate, partenze, fermate vicine, ricerca),
   il calcolo degli itinerari con cambi (`itinerari.py`), la ricerca dei luoghi su OpenStreetMap e l'assistente; interfaccia React con Vite, Bootstrap Italia e Leaflet su OpenStreetMap.
@@ -151,21 +153,21 @@ Tre container, più **Postgres** solo se si attiva il backoffice (`make backoffi
   solo riformularla: una riformulazione con numeri diversi viene scartata.
 - **mcp** (`mcp_server/`): server MCP in sola lettura con `cerca_fermata`, `fermate_vicine`,
   `prossime_partenze`, `bus_in_servizio`, `come_arrivare`, `orari_linea`, `chiedi_assistente`.
-- **backoffice** (`/admin`, facoltativo): fermate, linee, orari, calendari, avvisi e intestazione in Postgres.
+- **backoffice** (`/admin`, nell'app): fermate, linee, orari, calendari, avvisi e intestazione in Postgres.
   A ogni salvataggio il feed GTFS viene rigenerato, verificato e ricaricato senza riavvio; l'app pubblica legge
   solo i file, quindi funziona anche se il database si ferma.
 
-Senza backoffice il feed è nella cartella `GTFS_DIR` (predefinita `data/`): `fermate.csv` e `percorsi.json` sono le sorgenti,
+Il feed di partenza è nella cartella `GTFS_DIR` (predefinita `data/`), copiato nel database al primo avvio: `fermate.csv` e `percorsi.json` sono le sorgenti,
 `make gtfs` rigenera i file GTFS e `make geocode` cerca le fermate su OpenStreetMap e i tracciati stradali con
 OSRM (lo fa anche il workflow **geocoding** a ogni modifica).
 
-→ [Installazione](https://gzileni.github.io/quandopassa/installazione/) ·
-[Configurazione](https://gzileni.github.io/quandopassa/configurazione/) ·
-[Architettura e API](https://gzileni.github.io/quandopassa/architettura/) ·
-[Intelligenza artificiale](https://gzileni.github.io/quandopassa/intelligenza-artificiale/) ·
-[Server MCP](https://gzileni.github.io/quandopassa/mcp/) ·
-[Installazione conforme PA](https://gzileni.github.io/quandopassa/normativa-it/) ·
-[Video e demo](https://gzileni.github.io/quandopassa/video/)
+→ [Installazione](https://agent-engineering-studio.github.io/quandopassa/installazione/) ·
+[Configurazione](https://agent-engineering-studio.github.io/quandopassa/configurazione/) ·
+[Architettura e API](https://agent-engineering-studio.github.io/quandopassa/architettura/) ·
+[Intelligenza artificiale](https://agent-engineering-studio.github.io/quandopassa/intelligenza-artificiale/) ·
+[Server MCP](https://agent-engineering-studio.github.io/quandopassa/mcp/) ·
+[Installazione conforme PA](https://agent-engineering-studio.github.io/quandopassa/normativa-it/) ·
+[Video e demo](https://agent-engineering-studio.github.io/quandopassa/video/)
 
 ---
 

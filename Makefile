@@ -5,17 +5,16 @@ PYTHON  ?= python3
 GTFS    ?= data
 # servizio per logs/shell, es.  make logs S=app
 S       ?=
-# con il backoffice configurato nel .env si avvia anche Postgres (profilo "backoffice")
-PROFILI := $(shell grep -qE '^ADMIN_USER=.+' .env 2>/dev/null && echo --profile backoffice)
 
 .DEFAULT_GOAL := help
-.PHONY: help env build build-nocache up up-llm down restart ps logs shell test gtfs geocode demo video accessibilita docs clean backoffice password
+.PHONY: help env build build-nocache up up-llm down restart ps logs shell test gtfs geocode demo video accessibilita docs clean password
 
 help: ## Mostra questo elenco
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-14s\033[0m %s\n",$$1,$$2}'
 
-env: ## Crea .env da .env.example (se manca)
-	@test -f .env && echo ".env esiste già" || (cp .env.example .env && chmod 600 .env && echo "creato .env: rivedere i valori")
+env: ## Crea .env da .env.example (se manca) e completa utente, password e chiavi del backoffice
+	@test -f .env || (cp .env.example .env && chmod 600 .env && echo "creato .env: rivedere i valori")
+	@$(PYTHON) scripts/backoffice_env.py .env
 
 build: env ## Costruisce le immagini (app, inference, mcp)
 	$(COMPOSE) build
@@ -24,23 +23,18 @@ build-nocache: env ## Costruisce le immagini senza cache
 	$(COMPOSE) build --no-cache --pull
 
 up: env ## Avvia app + inferenza + MCP (http://localhost:8000)
-	$(COMPOSE) $(PROFILI) up -d --build --force-recreate --remove-orphans
-	@echo "app: http://localhost:8000   MCP: http://localhost:8090/mcp"
-	@test -z "$(PROFILI)" || echo "backoffice: http://localhost:8000/admin/"
+	$(COMPOSE) up -d --build --force-recreate --remove-orphans
+	@echo "app: http://localhost:8000   backoffice: http://localhost:8000/admin/   MCP: http://localhost:8090/mcp"
 
-backoffice: env ## Attiva il backoffice /admin: chiede utente e password, configura Postgres e avvia
-	$(PYTHON) scripts/backoffice_env.py .env
-	$(COMPOSE) --profile backoffice up -d --build --force-recreate --remove-orphans
-	@echo "backoffice: http://localhost:8000/admin/"
-
-password: ## Stampa l'hash di una nuova password del backoffice (da mettere in ADMIN_PASSWORD_HASH)
-	@cd api && $(PYTHON) -m quandopassa.password
+password: env ## Cambia la password del backoffice nel .env e riavvia l'app
+	@$(PYTHON) scripts/backoffice_env.py .env --password
+	$(COMPOSE) up -d --force-recreate app
 
 up-llm: env ## Come up, con LLM locale Ollama (profilo llm)
 	$(COMPOSE) --profile llm up -d --build --force-recreate
 
 down: ## Ferma e rimuove i container (i volumi restano)
-	$(COMPOSE) --profile llm --profile test --profile backoffice down
+	$(COMPOSE) --profile llm --profile test down
 
 restart: down up ## Riavvia tutto
 
@@ -86,4 +80,4 @@ docs: ## Anteprima del sito di documentazione su http://127.0.0.1:8002 (serve ze
 	zensical serve -a 127.0.0.1:8002
 
 clean: ## ATTENZIONE: ferma tutto e cancella i volumi (modelli Ollama, database e dati del backoffice)
-	$(COMPOSE) --profile llm --profile test --profile backoffice down -v --remove-orphans
+	$(COMPOSE) --profile llm --profile test down -v --remove-orphans

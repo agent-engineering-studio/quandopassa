@@ -35,7 +35,7 @@ def admin_cfg(tmp_path):
         conn.execute("CREATE SCHEMA public")
     return Config(gtfs_dir=GTFS, web_dist=tmp_path / "web", demo_ora="2026-11-11T09:05:00", geocoder="",
                   data_dir=tmp_path / "dati", database_url=DATABASE_URL, admin_user=USER,
-                  admin_password_hash=PASSWORD_HASH, admin_secret="segreto-di-prova-" * 3, osrm_url="")
+                  admin_password=PASSWORD, admin_secret="segreto-di-prova-" * 3, osrm_url="")
 
 
 @pytest.fixture
@@ -59,7 +59,25 @@ def test_password_hash():
 
 def test_backoffice_disattivato_senza_configurazione(client):
     r = client.post("/api/admin/login", json={"username": USER, "password": PASSWORD})
-    assert r.status_code == 404 and "non attivo" in r.json()["detail"]
+    assert r.status_code == 404 and "ADMIN_USER" in r.json()["detail"]
+
+
+def test_password_troppo_corta(admin_cfg, ia):
+    import dataclasses
+
+    cfg = dataclasses.replace(admin_cfg, admin_password="corta")
+    assert "troppo corta" in cfg.admin_problem
+    r = TestClient(create_app(cfg, ia)).post("/api/admin/login", json={"username": USER, "password": "corta"})
+    assert r.status_code == 404
+
+
+def test_accesso_con_hash(admin_cfg, ia):
+    import dataclasses
+
+    cfg = dataclasses.replace(admin_cfg, admin_password="", admin_password_hash=PASSWORD_HASH)
+    c = TestClient(create_app(cfg, ia))
+    assert c.post("/api/admin/login", json={"username": USER, "password": PASSWORD}).status_code == 200
+    assert c.post("/api/admin/login", json={"username": USER, "password": "altra-password-lunga"}).status_code == 401
 
 
 def test_accesso_e_csrf(app_client):

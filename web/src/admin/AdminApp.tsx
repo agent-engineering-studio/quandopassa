@@ -179,11 +179,11 @@ export default function AdminApp() {
         {phase === "loading" && <p>Caricamento…</p>}
         {phase === "disabled" && (
           <div className="alert alert-info">
-            <p className="fw-semibold mb-1">Il backoffice non è attivo su questa installazione.</p>
+            <p className="fw-semibold mb-1">Il backoffice non è configurato su questa installazione.</p>
             <p className="mb-0">
-              Per attivarlo il sistemista imposta nel file <code>.env</code> <code>DATA_DIR</code>,{" "}
-              <code>DATABASE_URL</code>, <code>ADMIN_USER</code> e <code>ADMIN_PASSWORD_HASH</code>. La guida è nella
-              documentazione, pagina «Backoffice».
+              Mancano utente o password nel file <code>.env</code> (<code>ADMIN_USER</code>,{" "}
+              <code>ADMIN_PASSWORD</code>): il sistemista li completa con <code>make env</code> (Docker) o rilanciando{" "}
+              <code>deploy/install.sh</code> (macchina virtuale). La guida è nella documentazione, pagina «Backoffice».
             </p>
           </div>
         )}

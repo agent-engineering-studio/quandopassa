@@ -24,7 +24,7 @@ il RPD. Per "come arrivo" la ricerca di indirizzi e luoghi passa dal server, che
 solo il testo cercato, mai la posizione; anche queste ricerche sono oscurate nei log. Le tile della mappa vengono scaricate dal browser dal fornitore indicato in `MAPPA_TILES`: in esercizio
 scegliere un tile server proprio o un fornitore con accordo ex art. 28.
 
-**Backoffice (facoltativo).** Se attivato, l'ufficio trasporti accede a `/admin` con un account del personale:
+**Backoffice.** L'ufficio trasporti accede a `/admin` con un account del personale:
 c'è un cookie tecnico di sessione (non serve consenso), un database Postgres con i dati del servizio (fermate,
 orari, avvisi: nessun dato dei cittadini) e un **registro delle modifiche** con il nome utente e l'ora di ogni
 operazione. Il trattamento dei dati del dipendente va nel registro dei trattamenti, con il tempo di

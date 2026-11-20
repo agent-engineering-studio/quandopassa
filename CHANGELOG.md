@@ -10,15 +10,15 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e il v
   dell'app (logo, ente, titolo), impostazioni di mappa, ricerca e biglietti, registro delle modifiche.
   Dati in **Postgres**; a ogni salvataggio il feed GTFS viene rigenerato, verificato e ricaricato senza
   riavvio (una modifica che renderebbe il feed non valido non viene salvata); export GTFS in zip.
-  Accesso con utente del `.env` (hash scrypt), cookie di sessione firmato, CSRF, blocco dopo 5 tentativi.
-  `make backoffice`, `make password`; profilo Docker `backoffice`.
+  Sempre attivo: utente e password nel `.env` (`ADMIN_USER`, `ADMIN_PASSWORD`, completati da `make env`),
+  cookie di sessione firmato, CSRF, blocco dopo 5 tentativi; `make password`; Postgres nel docker compose.
 - **Avvisi di servizio**: fermate sospese, deviazioni temporanee con percorso provvisorio, giorni di servizio
   sospeso (diventano `calendar_dates` nel GTFS), informazioni. Nell'app: barra degli avvisi, fermata sospesa
   in rosso, partenze segnate, itinerari che evitano le fermate sospese; API `GET /api/v1/alerts`.
 - L'app pubblica si accorge di un nuovo feed entro due minuti e si aggiorna da sola.
 - Installazione **senza Docker** su VM Linux (`deploy/install.sh`): Debian, Ubuntu, RHEL/Rocky/Alma, Fedora;
   servizi systemd non-root con hardening, nginx con rate limiting e log senza coordinate, HTTPS Let's Encrypt,
-  firewall, backoffice con Postgres locale e backup notturno (`--backoffice`, `--admin-da`), LLM locale
+  firewall, backoffice con Postgres locale e backup notturno (`--admin-da`), LLM locale
   opzionale, istanza demo, aggiornamento e disinstallazione; comando `quandopassa`. Requisiti minimi nel README.
 - Pulsante **Acquista il biglietto** verso la biglietteria online dell'azienda di trasporto (`LINK_BIGLIETTI`,
   `BIGLIETTERIA_NOME`): QuandoPassa non vende biglietti né gestisce pagamenti.

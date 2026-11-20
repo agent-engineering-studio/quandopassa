@@ -30,7 +30,7 @@ e l'azienda hanno già, **l'orario**, e lo trasforma in un servizio informativo 
    indicata da `GTFS_DIR`. Vedi [Il feed GTFS e le fermate](gtfs.md).
 2. **Le coordinate delle fermate.** Il geocoding da OpenStreetMap dà posizioni indicative; dopo il sopralluogo
    si scrivono quelle rilevate e restano fisse.
-3. **Un server.** Una piccola macchina virtuale Linux basta (2 vCPU e 2 GB di RAM anche con il backoffice),
+3. **Un server.** Una piccola macchina virtuale Linux basta (2 vCPU e 2 GB di RAM, backoffice compreso),
    con Docker o con lo script di installazione. Vedi [Installazione](installazione.md).
 
 ## Limiti dichiarati

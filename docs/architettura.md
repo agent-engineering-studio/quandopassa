@@ -12,7 +12,7 @@ flowchart LR
     A[app<br>FastAPI + interfaccia React] -->|intenti, FAQ, riformulazione| I[inference<br>rules / LLM]
     M[mcp<br>server MCP] -->|API HTTP| A
     G[(feed GTFS<br>e avvisi)] --> A
-    A -->|backoffice /admin| D[(Postgres<br>facoltativo)]
+    A -->|backoffice /admin| D[(Postgres)]
     A -->|rigenera a ogni modifica| G
   end
   X[Assistenti e agenti] -->|MCP| M
@@ -20,7 +20,7 @@ flowchart LR
   I -.->|solo con INFERENCE_BACKEND=openai| L[LLM<br>Ollama, vLLM, Azure…]
 ```
 
-Tre servizi in `docker-compose.yml`, più Postgres solo se si attiva il backoffice:
+Quattro servizi in `docker-compose.yml`:
 
 app (`api/` + `web/`)
 :   FastAPI con il motore GTFS (`gtfs.py`: calendario, posizioni stimate, partenze, fermate vicine, ricerca,
@@ -28,7 +28,7 @@ app (`api/` + `web/`)
     Serve l'interfaccia React e la pagina del backoffice (`/admin/`), due pagine dello stesso progetto Vite con
     Bootstrap Italia e Leaflet su OpenStreetMap.
 
-db (profilo `backoffice`, facoltativo)
+db
 :   Postgres con fermate, linee, orari, calendari, avvisi, impostazioni e registro (`db.py`). L'app pubblica
     non lo legge mai: a ogni modifica il backoffice (`admin.py`) rigenera e verifica il feed GTFS in
     `DATA_DIR/gtfs` (`sources.py`) e l'app lo ricarica senza riavvio. Se il database si ferma, mappa e orari

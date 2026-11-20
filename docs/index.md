@@ -50,7 +50,7 @@ L'istanza demo usa un orologio fisso su un mercoledì mattina, quando circolano 
     ---
 
     Tre container (app, inferenza, MCP) o una macchina virtuale senza Docker, configurazione in un file `.env`,
-    backoffice facoltativo con Postgres, API JSON aperte e un server MCP per collegare assistenti e agenti.
+    backoffice con Postgres, API JSON aperte e un server MCP per collegare assistenti e agenti.
 
     [:octicons-arrow-right-24: Installazione](installazione.md) ·
     [Architettura e API](architettura.md) · [Server MCP](mcp.md)

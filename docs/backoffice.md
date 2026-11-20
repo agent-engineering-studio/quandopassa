@@ -1,12 +1,12 @@
 ---
 title: Backoffice
-description: Il backoffice /admin per l'ufficio trasporti — fermate, linee, orari, calendari, avvisi ai cittadini, intestazione e logo — e come attivarlo.
+description: Il backoffice /admin per l'ufficio trasporti — fermate, linee, orari, calendari, avvisi ai cittadini, intestazione e logo — e come si accede.
 ---
 
 # Backoffice
 
 Il backoffice è la parte riservata all'**ufficio trasporti**, all'indirizzo `/admin/` dell'app. Si entra con
-utente e password; ogni modifica si vede **subito** sulla mappa dei cittadini.
+utente e password (scritti nel file `.env`); ogni modifica si vede **subito** sulla mappa dei cittadini.
 
 | Sezione | Cosa si fa |
 |---|---|
@@ -50,36 +50,44 @@ flowchart LR
 Gli avvisi compaiono una settimana prima dell'inizio (come "programmati") e spariscono da soli alla fine. Sono
 anche nell'API pubblica `GET /api/v1/alerts`, utile per siti e servizi dell'ente.
 
-## Attivarlo
+## Accesso
+
+Il backoffice è **sempre attivo**. Utente e password stanno nel file di configurazione `.env`:
+
+```ini
+ADMIN_USER=admin
+ADMIN_PASSWORD=una-password-lunga-almeno-12-caratteri
+```
 
 === "Docker"
 
-    ```bash
-    make backoffice        # chiede utente e password, prepara il database e riavvia
-    ```
+    `make up` (o `make env`) completa da solo le righe vuote: chiede la password o, se non c'è un terminale,
+    la genera, la scrive nel `.env` e la mostra. Avvia sempre anche Postgres. Poi apri
+    `http://localhost:8000/admin/`.
 
-    Il comando compila la sezione **Backoffice** del `.env` e avvia anche Postgres (profilo `backoffice`).
-    Poi apri `http://localhost:8000/admin/`.
+    Cambiare la password: `make password`, oppure modificare `ADMIN_PASSWORD` nel `.env` e lanciare `make up`.
 
 === "Macchina virtuale"
 
-    ```bash
-    sudo ./deploy/install.sh --backoffice
-    ```
+    `sudo ./deploy/install.sh` installa anche Postgres e il backoffice; alla prima installazione chiede la
+    password (o la genera e la mostra) e la scrive in `/etc/quandopassa/quandopassa.env`. Vedi
+    [Installazione](installazione.md#su-una-macchina-virtuale-linux-senza-docker).
 
-    Installa Postgres sulla stessa macchina, chiede la password (o la genera e la mostra una volta) e attiva il
-    backup giornaliero. Vedi [Installazione](installazione.md#su-una-macchina-virtuale-linux-senza-docker).
+    Cambiare la password: `sudo quandopassa password`, oppure modificare `ADMIN_PASSWORD` con
+    `sudo quandopassa config`.
+
+La password deve avere almeno 12 caratteri, senza spazi né `$ " ' # \ `` ` ``. Chi non vuole tenerla in chiaro nel
+file può scrivere al suo posto l'hash in `ADMIN_PASSWORD_HASH` (`python -m quandopassa.password`), che ha la
+precedenza. Cambiando la password le sessioni aperte si chiudono.
 
 Al primo avvio il database viene popolato con il feed in uso (`GTFS_DIR`): da quel momento i dati si modificano
 dal backoffice.
 
-**Cambiare la password**: `make password` (Docker, poi copiare la riga nel `.env` e `make up`) oppure
-`sudo quandopassa password` (macchina virtuale).
-
 ## Sicurezza
 
-- Un solo utente, definito nel `.env` (`ADMIN_USER`, `ADMIN_PASSWORD_HASH`): nel file c'è solo l'**hash** della
-  password (scrypt), mai la password in chiaro.
+- Un solo utente, definito nel `.env` (`ADMIN_USER`, `ADMIN_PASSWORD`). Il file va protetto: è leggibile solo
+  dall'amministratore e dal servizio (permessi 600 in Docker, 640 sulla macchina virtuale), e lo stesso vale per
+  le sue copie e i backup. In alternativa si può tenere solo l'hash scrypt (`ADMIN_PASSWORD_HASH`).
 - Sessione in un cookie tecnico `HttpOnly`, `SameSite=Strict`, `Secure` in HTTPS, valida 8 ore; token CSRF su
   ogni modifica; dopo 5 tentativi sbagliati l'accesso si blocca per 15 minuti (e nginx limita i tentativi).
 - Sulla macchina virtuale `--admin-da 10.0.0.0/8` apre `/admin` solo dalla rete dell'ente.

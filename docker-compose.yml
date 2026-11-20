@@ -5,7 +5,9 @@
 #   docker compose --profile llm up --build       + LLM locale con Ollama (modello piccolo, CPU)
 #   docker compose --profile demo up --build -d   + istanza demo su :8001 (orologio fisso, per i video)
 #   docker compose --profile test run --rm test   suite pytest
-#   docker compose --profile backoffice up -d     + Postgres per il backoffice /admin (make backoffice lo configura)
+#
+# Il backoffice /admin e il suo database Postgres sono sempre attivi: `make env` (lo lancia anche `make up`)
+# completa nel .env utente, password, chiave delle sessioni e password del database.
 #
 # Il feed GTFS è la cartella indicata da GTFS_DIR nel .env, montata in sola lettura.
 name: quandopassa
@@ -19,28 +21,28 @@ services:
     environment:
       GTFS_DIR: /srv/gtfs
       INFERENCE_URL: http://inference:8080
+      # backoffice: feed generato, impostazioni e logo nel volume "dati"; database nel servizio "db"
+      DATA_DIR: ${DATA_DIR:-/srv/dati}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://quandopassa:${POSTGRES_PASSWORD}@db:5432/quandopassa}
     volumes:
       - ${GTFS_DIR:-./data}:/srv/gtfs:ro
-      # backoffice: feed generato, impostazioni e logo (DATA_DIR=/srv/dati nel .env)
       - dati:/srv/dati
     depends_on:
       inference:
         condition: service_healthy
       db:
         condition: service_healthy
-        required: false
     restart: unless-stopped
 
-  # database del backoffice (profilo "backoffice"): fermate, linee, orari, avvisi, impostazioni, registro.
+  # database del backoffice: fermate, linee, orari, avvisi, impostazioni, registro.
   # L'app pubblica legge i file GTFS generati: se il database si ferma, mappa e orari funzionano comunque.
   db:
     container_name: quandopassa-db
     image: postgres:17.6-alpine
-    profiles: ["backoffice"]
     environment:
       POSTGRES_USER: quandopassa
       POSTGRES_DB: quandopassa
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?manca POSTGRES_PASSWORD nel .env, lanciare make env}
     volumes: ["postgres:/var/lib/postgresql/data"]
     expose: ["5432"]
     healthcheck:
