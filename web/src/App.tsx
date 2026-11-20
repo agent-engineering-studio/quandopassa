@@ -488,16 +488,23 @@ export default function App() {
                     a piedi.
                   </p>
                 )}
-                <InArrivo
-                  arrivi={arrivi}
-                  linee={linee}
-                  fermate={fermateById}
-                  prossimaPartenza={partenze[0]}
-                  onBus={(corsa, pos) => {
-                    setCorsaEvidenziata(corsa);
-                    setCentraSu(pos);
-                  }}
-                />
+                {closedStops.has(fermataSel.id) ? (
+                  <div className="alert alert-danger py-2 small" role="status">
+                    <strong>Fermata sospesa:</strong> i bus non fermano qui. Leggi l'avviso qui sopra per la fermata
+                    alternativa.
+                  </div>
+                ) : (
+                  <InArrivo
+                    arrivi={arrivi}
+                    linee={linee}
+                    fermate={fermateById}
+                    prossimaPartenza={partenze[0]}
+                    onBus={(corsa, pos) => {
+                      setCorsaEvidenziata(corsa);
+                      setCentraSu(pos);
+                    }}
+                  />
+                )}
                 <button
                   type="button"
                   className="btn btn-outline-primary btn-sm btn-icon mb-2"

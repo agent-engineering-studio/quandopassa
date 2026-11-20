@@ -40,6 +40,11 @@ invece di un "in orario" che non può verificare. La posizione resta sul telefon
 
 ![Come arrivo](docs/demo/quandopassa-come-arrivo.gif)
 
+**Avvisi**: lavori, scioperi e deviazioni compaiono in alto; la fermata sospesa è in rosso e "Come arrivo" la
+evita.
+
+![Avviso di fermata sospesa nell'app](docs/screenshot/14_avvisi_app.png)
+
 → [Guida per i cittadini](https://agentengineering.it/quandopassa/cittadini/) ·
 [video verticale](docs/demo/quandopassa-demo-verticale.mp4) ·
 [video "come arrivo" verticale](docs/demo/quandopassa-come-arrivo-verticale.mp4)
@@ -59,6 +64,18 @@ invece di un "in orario" che non può verificare. La posizione resta sul telefon
 | **Dati aperti e integrazione** | Feed GTFS standard, API JSON aperte e server MCP. |
 | **Biglietti fuori dal sito** | Nessuna vendita né pagamento: un pulsante porta alla biglietteria online del gestore (`LINK_BIGLIETTI`). |
 | **Riuso** | Un altro Comune cambia il feed GTFS e il file `.env` (o lo fa dal backoffice); codice EUPL-1.2 con `publiccode.yml`. |
+
+**Il backoffice** — l'ufficio trasporti pubblica un avviso e lo vede subito sulla mappa dei cittadini:
+
+![Backoffice](docs/demo/quandopassa-backoffice.gif)
+
+| | |
+|---|---|
+| ![Cruscotto](docs/screenshot/09_backoffice.png) **Cruscotto**: feed pubblicato, avvisi, cose da controllare | ![Nuovo avviso](docs/screenshot/10_backoffice_avviso.png) **Avvisi**: fermate sospese, deviazioni, scioperi |
+| ![Fermate](docs/screenshot/11_backoffice_fermate.png) **Fermate**: si spostano trascinandole sulla mappa | ![Linee](docs/screenshot/12_backoffice_linee.png) **Linee e orari**: percorso, minuti, partenze |
+
+[video MP4 del backoffice](docs/demo/quandopassa-backoffice.mp4) ·
+[tutti i video e gli screenshot](https://agentengineering.it/quandopassa/video/)
 
 Evoluzione naturale: con un feed **GTFS-Realtime** dell'azienda di trasporto, posizioni e ritardi veri al posto
 delle stime.

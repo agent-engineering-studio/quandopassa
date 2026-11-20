@@ -16,6 +16,9 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e il v
   sospeso (diventano `calendar_dates` nel GTFS), informazioni. Nell'app: barra degli avvisi, fermata sospesa
   in rosso, partenze segnate, itinerari che evitano le fermate sospese; API `GET /api/v1/alerts`.
 - L'app pubblica si accorge di un nuovo feed entro due minuti e si aggiorna da sola.
+- Video del backoffice (16:9 e GIF) e screenshot di backoffice e avvisi (`registra_demo.py --backoffice`);
+  video e screenshot dell'app rigenerati. Alla fermata sospesa il riquadro "Bus in arrivo" lascia il posto
+  all'avviso che i bus non fermano.
 - Installazione **senza Docker** su VM Linux (`deploy/install.sh`): Debian, Ubuntu, RHEL/Rocky/Alma, Fedora;
   servizi systemd non-root con hardening, nginx con rate limiting e log senza coordinate, HTTPS Let's Encrypt,
   firewall, backoffice con Postgres locale e backup notturno (`--admin-da`), LLM locale

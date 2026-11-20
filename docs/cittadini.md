@@ -76,12 +76,20 @@ colore della linea. Dalla scheda di una fermata, **Portami qui** la imposta come
   <source src="../demo/quandopassa-come-arrivo-verticale.mp4" type="video/mp4">
 </video>
 
-## 5. Biglietti
+## 5. Avvisi: lavori, scioperi, deviazioni
+
+Quando l'ufficio trasporti pubblica un avviso lo vedi **in alto**, sotto l'intestazione. Se una fermata è
+sospesa è segnata **in rosso** sulla mappa, nella sua scheda trovi l'avviso e la fermata alternativa, e
+**Come arrivo** non te la propone. Nei giorni di sciopero o di servizio sospeso i bus non compaiono.
+
+![Avviso di fermata sospesa nell'app e nella scheda della fermata](screenshot/14_avvisi_app.png)
+
+## 6. Biglietti
 
 QuandoPassa non vende biglietti. Nella scheda **Servizio** trovi tariffe e informazioni e, se il gestore ha una
 biglietteria online, il pulsante **Acquista il biglietto** che apre il suo sito: acquisto e pagamento avvengono lì.
 
-## 6. Chiedi all'assistente
+## 7. Chiedi all'assistente
 
 Nella scheda **Chiedi** puoi scrivere come parleresti a una persona:
 

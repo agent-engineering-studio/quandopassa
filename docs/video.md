@@ -40,6 +40,18 @@ circolano entrambe le linee. Le posizioni dei bus sono stimate dall'orario progr
 
 [:material-download: MP4 verticale](demo/quandopassa-come-arrivo-verticale.mp4){ .md-button }
 
+## Backoffice e avvisi
+
+L'ufficio trasporti pubblica un avviso di fermata sospesa, che compare subito nell'app dei cittadini; poi sposta
+una fermata sulla mappa, apre una linea, l'intestazione dell'app e il download del GTFS.
+
+<video class="video-demo" controls muted playsinline preload="metadata" poster="../screenshot/09_backoffice.png">
+  <source src="../demo/quandopassa-backoffice.mp4" type="video/mp4">
+</video>
+
+[:material-download: MP4](demo/quandopassa-backoffice.mp4){ .md-button }
+[:material-download: GIF](demo/quandopassa-backoffice.gif){ .md-button }
+
 ## Screenshot
 
 <div class="grid screens" markdown>
@@ -58,6 +70,18 @@ circolano entrambe le linee. Le posizioni dei bus sono stimate dall'orario progr
 
 ![Telefono](screenshot/06_mobile.png)
 
+![Avviso di fermata sospesa nell'app](screenshot/14_avvisi_app.png)
+
+![Backoffice: cruscotto](screenshot/09_backoffice.png)
+
+![Backoffice: nuovo avviso](screenshot/10_backoffice_avviso.png)
+
+![Backoffice: fermate sulla mappa](screenshot/11_backoffice_fermate.png)
+
+![Backoffice: linee e orari](screenshot/12_backoffice_linee.png)
+
+![Backoffice: intestazione e impostazioni](screenshot/13_backoffice_impostazioni.png)
+
 </div>
 
 ## Rigenerare video e screenshot
@@ -70,6 +94,14 @@ pip install playwright && playwright install chromium     # serve anche ffmpeg
 make demo                                                 # istanza demo su :8001
 make video                                                # demo e come arrivo, 16:9 e 9:16, screenshot
 make accessibilita                                        # audit axe-core WCAG 2.1 AA
+```
+
+Video e screenshot del backoffice pubblicano un avviso e spostano una fermata: vanno registrati su un'istanza
+di prova con orologio fisso e backoffice, indicando le credenziali nell'ambiente:
+
+```bash
+BASE_URL=http://localhost:8001 ADMIN_USER=admin ADMIN_PASSWORD=... python scripts/registra_demo.py --backoffice
+BASE_URL=http://localhost:8001 ADMIN_USER=admin ADMIN_PASSWORD=... python scripts/registra_demo.py --screenshot --backoffice
 ```
 
 `make video` riavvia la demo prima di ogni registrazione, perché il copione trovi i bus dove se li aspetta.

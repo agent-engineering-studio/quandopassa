@@ -66,6 +66,15 @@ L'istanza demo usa un orologio fisso su un mercoledì mattina, quando circolano 
 *Da una fermata, un indirizzo o un punto sulla mappa: quali bus prendere, dove cambiare, quanto camminare.
 E quando conviene, "solo a piedi".*
 
+## Il backoffice dell'ufficio trasporti
+
+<video class="video-demo" controls muted playsinline preload="metadata" poster="screenshot/09_backoffice.png">
+  <source src="demo/quandopassa-backoffice.mp4" type="video/mp4">
+</video>
+
+*Fermate, linee, orari e avvisi ai cittadini, senza chiamare un tecnico: una fermata sospesa compare subito
+nell'app, il GTFS si scarica sempre aggiornato. [Scopri il backoffice](backoffice.md).*
+
 ## Cosa vedi
 
 <div class="grid screens" markdown>
@@ -73,6 +82,10 @@ E quando conviene, "solo a piedi".*
 ![I bus sulla mappa con i tracciati stradali delle Circolari A e B](screenshot/01_mappa.png)
 
 ![Scheda della fermata con il bus in arrivo, i minuti e le fermate mancanti](screenshot/03_fermata.png)
+
+![Un avviso di fermata sospesa in evidenza nell'app e nella scheda della fermata](screenshot/14_avvisi_app.png)
+
+![Il backoffice: un nuovo avviso di fermata sospesa](screenshot/10_backoffice_avviso.png)
 
 </div>
 
@@ -94,6 +107,8 @@ E quando conviene, "solo a piedi".*
 | Faccio in tempo? | a occhio | **"fai in tempo"**, **"affrettati"**, **"non fai in tempo"** |
 | Come arrivo | bisogna conoscere le linee | **itinerario** a piedi + bus, con il cambio e l'orario di arrivo |
 | Domande | telefono all'azienda | **assistente IA** in italiano, orari calcolati dall'app |
+| Lavori, scioperi, deviazioni | un cartello alla fermata | **avviso** nell'app, fermata sospesa sulla mappa, itinerari che la evitano |
+| Aggiornare fermate e orari | un tecnico | **backoffice** dell'ufficio trasporti, mappa aggiornata subito |
 | Altri sistemi | nessuna integrazione | **API aperte** e **server MCP** |
 
 !!! warning "Proposta indipendente"

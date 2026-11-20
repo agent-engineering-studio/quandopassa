@@ -8,6 +8,10 @@ description: Il backoffice /admin per l'ufficio trasporti — fermate, linee, or
 Il backoffice è la parte riservata all'**ufficio trasporti**, all'indirizzo `/admin/` dell'app. Si entra con
 utente e password (scritti nel file `.env`); ogni modifica si vede **subito** sulla mappa dei cittadini.
 
+<video class="video-demo" controls muted playsinline preload="metadata" poster="../screenshot/09_backoffice.png">
+  <source src="../demo/quandopassa-backoffice.mp4" type="video/mp4">
+</video>
+
 | Sezione | Cosa si fa |
 |---|---|
 | **Cruscotto** | Stato del feed pubblicato, avvisi in corso, problemi da sistemare (fermate senza posizione, feed in scadenza…) |
@@ -18,6 +22,22 @@ utente e password (scritti nel file `.env`); ogni modifica si vede **subito** su
 | **Feed GTFS** | Azienda di trasporto, periodo di validità, **download del GTFS** (zip) |
 | **Impostazioni** | **Intestazione dell'app** (logo, nome dell'ente e collegamento al suo sito, titolo, sottotitolo), mappa, ricerca dei luoghi, biglietti |
 | **Registro** | Chi ha modificato cosa e quando |
+
+<div class="grid screens" markdown>
+
+![Cruscotto](screenshot/09_backoffice.png)
+
+![Nuovo avviso di fermata sospesa](screenshot/10_backoffice_avviso.png)
+
+![Fermate sulla mappa: si spostano trascinandole](screenshot/11_backoffice_fermate.png)
+
+![Linea con percorso, minuti e partenze](screenshot/12_backoffice_linee.png)
+
+![Intestazione dell'app e impostazioni](screenshot/13_backoffice_impostazioni.png)
+
+![L'avviso nell'app dei cittadini](screenshot/14_avvisi_app.png)
+
+</div>
 
 ## Come funziona
 
