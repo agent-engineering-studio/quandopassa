@@ -139,3 +139,14 @@ html, body { overflow-x: hidden; }
 .pin-arrivo { background: none; border: none; }
 
 .card-biglietti { border: 2px solid #0066cc; border-radius: 4px; background: #f2f7fc; }
+
+/* ---------------------------------------------------------------- avvisi di servizio */
+.barra-avvisi { background: #fff4d6; border-bottom: 1px solid #e6c34d; color: #1a1a1a; }
+.avviso-servizio + .avviso-servizio { margin-top: .5rem; padding-top: .5rem; border-top: 1px solid rgba(0, 0, 0, .1); }
+.badge-avviso { display: inline-block; font-size: .75rem; padding: .05rem .4rem; border-radius: 3px; background: #a66300; color: #fff; }
+.avviso-stop_closed .badge-avviso, .avviso-service_suspended .badge-avviso { background: #a61d2a; }
+.avviso-info .badge-avviso { background: #0066cc; }
+.avviso-futuro .badge-avviso { background: #5c6f82; }
+.avvisi-fermata .avviso-servizio { border-left: 4px solid #a66300; padding-left: .5rem; margin-bottom: .5rem; }
+.partenza-sospesa .tabular { text-decoration: line-through; }
+.logo-ente { max-height: 44px; max-width: 150px; object-fit: contain; }

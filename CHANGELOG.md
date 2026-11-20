@@ -5,6 +5,21 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e il v
 ## [Non rilasciato]
 
 ### Aggiunto
+- **Backoffice** `/admin` per l'ufficio trasporti (React + Vite, Bootstrap Italia): fermate sulla mappa,
+  linee con percorso, minuti e partenze, calendari ed eccezioni, agenzia e validità del feed, intestazione
+  dell'app (logo, ente, titolo), impostazioni di mappa, ricerca e biglietti, registro delle modifiche.
+  Dati in **Postgres**; a ogni salvataggio il feed GTFS viene rigenerato, verificato e ricaricato senza
+  riavvio (una modifica che renderebbe il feed non valido non viene salvata); export GTFS in zip.
+  Accesso con utente del `.env` (hash scrypt), cookie di sessione firmato, CSRF, blocco dopo 5 tentativi.
+  `make backoffice`, `make password`; profilo Docker `backoffice`.
+- **Avvisi di servizio**: fermate sospese, deviazioni temporanee con percorso provvisorio, giorni di servizio
+  sospeso (diventano `calendar_dates` nel GTFS), informazioni. Nell'app: barra degli avvisi, fermata sospesa
+  in rosso, partenze segnate, itinerari che evitano le fermate sospese; API `GET /api/v1/alerts`.
+- L'app pubblica si accorge di un nuovo feed entro due minuti e si aggiorna da sola.
+- Installazione **senza Docker** su VM Linux (`deploy/install.sh`): Debian, Ubuntu, RHEL/Rocky/Alma, Fedora;
+  servizi systemd non-root con hardening, nginx con rate limiting e log senza coordinate, HTTPS Let's Encrypt,
+  firewall, backoffice con Postgres locale e backup notturno (`--backoffice`, `--admin-da`), LLM locale
+  opzionale, istanza demo, aggiornamento e disinstallazione; comando `quandopassa`. Requisiti minimi nel README.
 - Pulsante **Acquista il biglietto** verso la biglietteria online dell'azienda di trasporto (`LINK_BIGLIETTI`,
   `BIGLIETTERIA_NOME`): QuandoPassa non vende biglietti né gestisce pagamenti.
 - **Come arrivo**: itinerari porta a porta da fermate, indirizzi, luoghi (OpenStreetMap) o punti sulla mappa,
@@ -21,6 +36,8 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e il v
 - `CONTRIBUTING.md`, `SECURITY.md`, questo changelog e il test di validità di `publiccode.yml`.
 
 ### Modificato
+- La generazione del GTFS (`scripts/build_gtfs.py`) è nel pacchetto dell'app (`quandopassa/sources.py`) e
+  supporta varianti delle linee (`id`), direzione ed eccezioni dei calendari.
 - Interfaccia rifatta con Bootstrap Italia 2.18.3, responsive, senza CDN di terzi.
 - L'interfaccia segue sempre l'ora reale; la simulazione resta solo nell'istanza demo.
 - Linee sulla mappa lungo i tracciati stradali (OSRM) e fermate geocodificate su OpenStreetMap.

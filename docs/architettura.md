@@ -1,6 +1,6 @@
 ---
 title: Architettura e API
-description: I tre servizi di QuandoPassa, come si stima la posizione dei bus e le API JSON aperte.
+description: I servizi di QuandoPassa, il backoffice con Postgres, come si stima la posizione dei bus e le API JSON aperte.
 ---
 
 # Architettura e API
@@ -11,18 +11,28 @@ flowchart LR
   subgraph Server
     A[app<br>FastAPI + interfaccia React] -->|intenti, FAQ, riformulazione| I[inference<br>rules / LLM]
     M[mcp<br>server MCP] -->|API HTTP| A
-    G[(feed GTFS<br>sola lettura)] --> A
+    G[(feed GTFS<br>e avvisi)] --> A
+    A -->|backoffice /admin| D[(Postgres<br>facoltativo)]
+    A -->|rigenera a ogni modifica| G
   end
   X[Assistenti e agenti] -->|MCP| M
+  U[Ufficio trasporti] -->|HTTPS /admin| A
   I -.->|solo con INFERENCE_BACKEND=openai| L[LLM<br>Ollama, vLLM, Azure…]
 ```
 
-Tre servizi in `docker-compose.yml`, **nessun database**:
+Tre servizi in `docker-compose.yml`, più Postgres solo se si attiva il backoffice:
 
 app (`api/` + `web/`)
 :   FastAPI con il motore GTFS (`gtfs.py`: calendario, posizioni stimate, partenze, fermate vicine, ricerca,
-    percorsi diretti a piedi + bus) e l'assistente (`assistente.py`). Serve l'interfaccia React, costruita con
-    Vite, Bootstrap Italia e Leaflet su OpenStreetMap.
+    percorsi diretti a piedi + bus), gli avvisi di servizio (`alerts.py`) e l'assistente (`assistente.py`).
+    Serve l'interfaccia React e la pagina del backoffice (`/admin/`), due pagine dello stesso progetto Vite con
+    Bootstrap Italia e Leaflet su OpenStreetMap.
+
+db (profilo `backoffice`, facoltativo)
+:   Postgres con fermate, linee, orari, calendari, avvisi, impostazioni e registro (`db.py`). L'app pubblica
+    non lo legge mai: a ogni modifica il backoffice (`admin.py`) rigenera e verifica il feed GTFS in
+    `DATA_DIR/gtfs` (`sources.py`) e l'app lo ricarica senza riavvio. Se il database si ferma, mappa e orari
+    continuano a funzionare.
 
 inference (`inference/`)
 :   server OpenAI-compatibile con backend `rules` (offline) o `openai`. Endpoint `/v1/tasks/intent`,
@@ -75,3 +85,16 @@ facoltativo `ora` (ISO 8601) calcola la risposta per un altro istante.
 | GET | `/luoghi?q` | fermate, indirizzi e luoghi per scegliere partenza e arrivo |
 | GET | `/percorso?lat&lon&a` | bus diretto verso una fermata (compatibilità) |
 | GET | `/assistente?testo&lat&lon` | assistente IA |
+| GET | `/alerts?ora` | avvisi di servizio in corso e della prossima settimana: `kind` (`info`, `detour`, `stop_closed`, `service_suspended`), periodo, linee, fermate, tracciato della deviazione |
+
+Le partenze da una fermata sospesa hanno `suspended: true`; `/fermate` indica le fermate sospese adesso
+(`closed`) e `/fermate/{id}` gli avvisi che la riguardano (`alerts`). `/info` contiene anche gli avvisi
+(`alerts`) e l'intestazione dell'app (`header`: titolo, ente, logo).
+
+## API del backoffice
+
+Su `/api/admin`, solo dopo l'accesso (cookie di sessione e intestazione `X-CSRF-Token` per le modifiche):
+`login`, `logout`, `session`, `status`, `data`, `stops`, `calendars`, `variants` (linee, percorsi e partenze),
+`variants/{id}/shape` (tracciato, anche calcolato con OSRM), `feed`, `alerts`, `settings`, `logo`, `audit`,
+`export.zip`. Ogni modifica restituisce il riepilogo del feed rigenerato e gli avvisi di verifica; se il feed
+avrebbe errori risponde 422 con l'elenco e non salva nulla.

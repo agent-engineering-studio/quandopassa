@@ -18,6 +18,8 @@ export interface Fermata {
   posizione: string;
   provvisoria: boolean;
   linee?: string[];
+  closed?: boolean;
+  alerts?: ServiceAlert[];
 }
 
 export interface Partenza {
@@ -29,6 +31,8 @@ export interface Partenza {
   orario: string;
   tra_minuti: number;
   in_corsa: boolean;
+  suspended?: boolean;
+  alert_id?: number;
 }
 
 export interface FermataVicina extends Fermata {
@@ -87,6 +91,35 @@ export interface Info {
   avvisi: string[];
   tracciati_stradali: boolean;
   biglietti: { url: string | null; nome: string | null; info: string };
+  alerts: ServiceAlert[];
+  header: AppHeader;
+}
+
+/** Intestazione dell'app, configurabile dal backoffice. */
+export interface AppHeader {
+  title: string;
+  subtitle: string;
+  entity_name: string;
+  entity_url: string;
+  logo_url: string | null;
+  logo_alt: string;
+}
+
+export type AlertKind = "info" | "detour" | "stop_closed" | "service_suspended";
+
+/** Avviso di servizio: deviazione, fermata sospesa, servizio sospeso o informazione. */
+export interface ServiceAlert {
+  id: number;
+  kind: AlertKind;
+  kind_label: string;
+  title: string;
+  description: string;
+  starts_at: string;
+  ends_at: string | null;
+  route_ids: string[];
+  stop_ids: string[];
+  shape: [number, number][] | null;
+  active?: boolean;
 }
 
 export interface Luogo {
@@ -189,6 +222,8 @@ const q = (p: Record<string, string | number | undefined | null>) => {
 
 export const api = {
   info: () => richiesta<Info>("/info"),
+  health: () => richiesta<{ stato: string; feed: string }>("/health"),
+  fermata: (id: string, ora?: string) => richiesta<Fermata & { partenze: Partenza[] }>(`/fermate/${id}?${q({ ora })}`),
   ora: () => richiesta<{ ora: string; demo: boolean }>("/ora"),
   fermate: () => richiesta<Fermata[]>("/fermate"),
   linee: () => richiesta<LineaDettaglio[]>("/linee"),

@@ -1,0 +1,23 @@
+/* Backoffice: Bootstrap Italia più poche regole per mappe e tabelle */
+.admin-main { min-height: 70vh; }
+.mappa-admin { position: relative; border: 1px solid #c5c7c9; border-radius: 4px; overflow: hidden; }
+.admin-nav .nav-link { white-space: nowrap; }
+.admin-nav .nav-link.active { font-weight: 700; border-bottom: 3px solid #fff; }
+.lista-admin { max-height: 460px; overflow-y: auto; }
+.lista-admin .list-group-item.active { z-index: 0; }
+.pin-fermata { display: flex; align-items: center; justify-content: center; }
+.pin-fermata span { display: flex; align-items: center; justify-content: center; width: 30px; height: 30px;
+  border-radius: 50%; background: #0066cc; color: #fff; font-size: 11px; font-weight: 700;
+  border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .45); }
+.pin-selected span { background: #a61d2a; width: 34px; height: 34px; font-size: 12px; }
+.pin-closed span { background: #5c6f82; text-decoration: line-through; }
+.pin-provisional span { background: #fff; color: #0066cc; border-color: #0066cc; border-style: dashed; }
+.badge-colore { display: inline-block; min-width: 2.2em; text-align: center; border-radius: 4px; padding: .15em .45em;
+  font-weight: 700; }
+.tabella-percorso td, .tabella-percorso th { vertical-align: middle; }
+.tabella-percorso input { max-width: 6rem; }
+.giorni-settimana { display: flex; flex-wrap: wrap; gap: .25rem 1rem; }
+.anteprima-testata { border-radius: 4px; overflow: hidden; }
+.anteprima-testata img { max-height: 48px; max-width: 160px; object-fit: contain; }
+.logo-testata { max-height: 48px; max-width: 160px; object-fit: contain; }
+.chip-scelta { display: inline-flex; align-items: center; gap: .25rem; }

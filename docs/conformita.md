@@ -16,13 +16,19 @@ Audit automatico axe-core (WCAG 2 A/AA, 2.1 A/AA) su tutte le schede, desktop e 
 Serve comunque un test con utenti e la dichiarazione di accessibilità su form.agid.gov.it.
 
 ## Protezione dati – GDPR
-Nessun account, nessun database, nessun cookie. La posizione del telefono si usa solo se la persona la attiva:
+Per i cittadini: nessun account, nessun cookie, nessun dato salvato. La posizione del telefono si usa solo se la persona la attiva:
 le fermate vicine sono calcolate dal server per quella richiesta e le coordinate **non vengono salvate né scritte
 nei log** (filtro sui log di accesso, verificato dai test); lo stesso vale per il testo delle domande
 all'assistente. Restano nei log di accesso l'indirizzo IP e il percorso richiesto: conservazione da definire con
 il RPD. Per "come arrivo" la ricerca di indirizzi e luoghi passa dal server, che invia al geocoder (`LUOGHI_GEOCODER`)
 solo il testo cercato, mai la posizione; anche queste ricerche sono oscurate nei log. Le tile della mappa vengono scaricate dal browser dal fornitore indicato in `MAPPA_TILES`: in esercizio
 scegliere un tile server proprio o un fornitore con accordo ex art. 28.
+
+**Backoffice (facoltativo).** Se attivato, l'ufficio trasporti accede a `/admin` con un account del personale:
+c'è un cookie tecnico di sessione (non serve consenso), un database Postgres con i dati del servizio (fermate,
+orari, avvisi: nessun dato dei cittadini) e un **registro delle modifiche** con il nome utente e l'ora di ogni
+operazione. Il trattamento dei dati del dipendente va nel registro dei trattamenti, con il tempo di
+conservazione del registro e dei backup stabilito con il RPD.
 
 ## Pagamenti
 QuandoPassa non vende titoli di viaggio e non tratta dati di pagamento: il pulsante "Acquista il biglietto" apre

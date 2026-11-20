@@ -91,7 +91,7 @@ def test_build_gtfs_rigenera_identico(tmp_path):
         shutil.copy(GTFS / f, tmp_path / f)
     if (GTFS / "forme.json").exists():
         shutil.copy(GTFS / "forme.json", tmp_path / "forme.json")
-    stat = build_gtfs.costruisci(tmp_path)
+    stat = build_gtfs.build_gtfs(tmp_path)
     assert stat["corse"] == 16 and stat["orari"] == 192
     for f in ("stops.txt", "trips.txt", "stop_times.txt", "routes.txt", "calendar.txt"):
         assert (tmp_path / f).read_text() == (GTFS / f).read_text(), f

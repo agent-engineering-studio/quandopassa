@@ -50,7 +50,7 @@ testo sui biglietti nel file `.env` (vedi [Configurazione](configurazione.md) e 
 **Dati aperti.** Lo stesso feed GTFS alimenta QuandoPassa e può essere pubblicato sul portale open data del
 Comune e sul punto di accesso nazionale ai dati del trasporto, così le app di mobilità lo riprendono.
 
-**Ospitalità.** QuandoPassa non conserva dati personali e non ha database, ma resta un servizio della PA: va
+**Ospitalità.** QuandoPassa non conserva dati dei cittadini (il database c'è solo con il backoffice e contiene i dati del servizio), ma resta un servizio della PA: va
 ospitato su infrastrutture o servizi cloud **qualificati ACN**. Se un fornitore lo offre come servizio SaaS, quel
 servizio deve essere qualificato.
 

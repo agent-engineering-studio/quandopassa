@@ -7,6 +7,7 @@ import { hhmmDaSecondi } from "../motore";
 
 interface Props {
   info: Info;
+  closedStops?: Set<string>;
   linee: LineaDettaglio[];
   fermate: Fermata[];
   veicoli: Veicolo[];
@@ -162,10 +163,22 @@ export default function Mappa(p: Props) {
           )),
         )}
 
+      {p.info.alerts
+        .filter((a) => a.kind === "detour" && a.shape && a.shape.length > 1)
+        .map((a) => (
+          <Polyline key={`deviazione-${a.id}`} positions={a.shape!} pathOptions={{ color: "#a66300", weight: 6, dashArray: "10 8", opacity: 0.9 }}>
+            <Tooltip sticky>
+              <strong>Deviazione: {a.title}</strong>
+              {a.route_ids.length ? <><br />Linee {a.route_ids.join(", ")}</> : null}
+            </Tooltip>
+          </Polyline>
+        ))}
+
       {p.fermate
         .filter((f) => (f.linee ?? []).some((l) => p.lineeVisibili.includes(l)))
         .map((f) => {
           const sel = f.id === p.selezionata;
+          const chiusa = p.closedStops?.has(f.id) ?? false;
           const colore = coloreLinea.get((f.linee ?? [])[0] ?? "") ?? "#0066cc";
           return (
             <CircleMarker
@@ -173,11 +186,11 @@ export default function Mappa(p: Props) {
               center={[f.lat, f.lon]}
               radius={sel ? 10 : 7}
               pathOptions={{
-                color: (f.linee ?? []).length > 1 ? "#212529" : colore,
+                color: chiusa ? "#a61d2a" : (f.linee ?? []).length > 1 ? "#212529" : colore,
                 weight: sel ? 4 : 3,
-                fillColor: "#ffffff",
+                fillColor: chiusa ? "#f3c1c7" : "#ffffff",
                 fillOpacity: 1,
-                dashArray: f.provvisoria ? "3 3" : undefined,
+                dashArray: f.provvisoria || chiusa ? "3 3" : undefined,
               }}
               eventHandlers={{ click: () => p.onFermata(f.id) }}
             >
@@ -186,6 +199,7 @@ export default function Mappa(p: Props) {
                 <br />
                 Linee {(f.linee ?? []).join(", ")}
                 {f.provvisoria ? <><br /><em>posizione provvisoria</em></> : null}
+                {chiusa ? <><br /><strong>fermata sospesa</strong></> : null}
               </Tooltip>
             </CircleMarker>
           );
