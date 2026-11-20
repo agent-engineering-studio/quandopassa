@@ -6,6 +6,11 @@
     python scripts/registra_demo.py --percorso      # 16:9 -> docs/demo/quandopassa-come-arrivo.{mp4,gif}
     python scripts/registra_demo.py --percorso --verticale   # 9:16 -> docs/demo/quandopassa-come-arrivo-verticale.mp4
     python scripts/registra_demo.py --screenshot    # docs/screenshot/*.png
+    python scripts/registra_demo.py --backoffice    # 16:9 -> docs/demo/quandopassa-backoffice.{mp4,gif}
+    python scripts/registra_demo.py --screenshot --backoffice   # docs/screenshot/09-14 (backoffice e avvisi)
+
+Le scene del backoffice modificano i dati (pubblicano un avviso, spostano una fermata): usarle su un'istanza di
+prova con orologio fisso e backoffice attivo, con ADMIN_USER e ADMIN_PASSWORD nell'ambiente.
 
 L'orologio della demo parte dall'avvio del container: riavviarla prima di ogni registrazione
 (docker compose restart demo) perché le scene trovino i bus dove il copione se li aspetta.
@@ -15,6 +20,7 @@ Richiede playwright (chromium) e ffmpeg.
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -340,6 +346,181 @@ def scena_percorso(browser, verticale: bool) -> Path:
     return Path(page.video.path())
 
 
+# ---------------------------------------------------------------------------------------------- backoffice
+ADMIN_USER = os.getenv("ADMIN_USER", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")
+ALERT_TITLE = "Piazza Plebiscito chiusa per il mercato"
+
+
+def admin_login(page: Page, slow: bool = False) -> None:
+    if not ADMIN_PASSWORD:
+        sys.exit("serve ADMIN_PASSWORD nell'ambiente per le scene del backoffice")
+    page.goto(BASE + "/admin/")
+    user = page.get_by_label(re.compile(r"^Utente"))
+    user.wait_for(timeout=15000)
+    if slow:
+        user.press_sequentially(ADMIN_USER, delay=90)
+        page.get_by_label(re.compile(r"^Password")).press_sequentially(ADMIN_PASSWORD, delay=40)
+    else:
+        user.fill(ADMIN_USER)
+        page.get_by_label(re.compile(r"^Password")).fill(ADMIN_PASSWORD)
+    page.get_by_role("button", name="Entra").click()
+    page.get_by_role("heading", name="Cruscotto").wait_for(timeout=15000)
+
+
+def admin_section(page: Page, label: str, heading: str) -> None:
+    page.locator("nav.admin-nav a", has_text=label).first.click()
+    page.get_by_role("heading", name=heading, exact=True).wait_for(timeout=15000)
+    page.wait_for_timeout(500)
+
+
+def fill_stop_alert(page: Page) -> None:
+    page.get_by_role("button", name="Nuovo avviso").click()
+    page.get_by_label(re.compile(r"^Titolo")).press_sequentially(ALERT_TITLE, delay=45)
+    page.get_by_label("Descrizione").press_sequentially("Usare la fermata di Corso Vittorio Emanuele.", delay=30)
+    page.get_by_label(re.compile(r"^Dal( \*)?$")).fill("2026-11-10T07:00")
+    page.get_by_label("Aggiungi una fermata").select_option("R02")
+    page.wait_for_timeout(700)
+
+
+def wait_saved(page: Page) -> None:
+    page.get_by_text("La mappa pubblica è già aggiornata").wait_for(timeout=20000)
+
+
+def drag_selected_stop(page: Page, dx: int, dy: int) -> None:
+    pin = page.locator(".pin-selected").first
+    box = pin.bounding_box()
+    x, y = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    page.mouse.move(x, y)
+    page.mouse.down()
+    for k in range(1, 16):
+        page.mouse.move(x + dx * k / 15, y + dy * k / 15)
+        page.wait_for_timeout(40)
+    page.mouse.up()
+
+
+def backoffice_scene(browser) -> Path:
+    ctx = contesto(browser, DESKTOP, "b")
+    page = ctx.new_page()
+    page.goto(BASE + "/admin/")
+    page.get_by_label(re.compile(r"^Utente")).wait_for(timeout=15000)
+    cartello(page, """<p style="font-size:22px;letter-spacing:.08em;text-transform:uppercase;opacity:.8">QuandoPassa · per l'ufficio trasporti</p>
+      <h1 style="font-size:56px">Il backoffice</h1>
+      <p style="font-size:28px;margin-top:24px">Fermate, linee, orari e <b>avvisi ai cittadini</b>,<br>
+      senza chiamare un tecnico. La mappa si aggiorna <b>subito</b>.</p>""", 4200)
+
+    didascalia(page, "Si entra con utente e password", "scritti nel file di configurazione del server")
+    admin_login(page, slow=True)
+    didascalia(page, "Il cruscotto", "feed pubblicato, avvisi in corso, cose da controllare")
+    page.wait_for_timeout(3000)
+
+    admin_section(page, "Avvisi", "Avvisi ai cittadini")
+    didascalia(page, "Una fermata chiusa per il mercato?", "un avviso: tipo, testo, da quando, quale fermata")
+    fill_stop_alert(page)
+    page.wait_for_timeout(1600)
+    evidenzia(page, "button:has-text(\"Pubblica l'avviso\")", 600).click()
+    wait_saved(page)
+    didascalia(page, "Pubblicato", "nessun riavvio: l'app pubblica lo mostra già")
+    page.wait_for_timeout(2400)
+
+    page.goto(BASE + "/")
+    page.wait_for_selector(".barra-avvisi", timeout=20000)
+    didascalia(page, "Nell'app: l'avviso in evidenza", "e la fermata sospesa in rosso sulla mappa")
+    page.wait_for_timeout(3000)
+    campo = evidenzia(page, "#cerca-fermata", 400)
+    campo.click()
+    campo.press_sequentially("Plebiscito", delay=80)
+    page.wait_for_timeout(600)
+    page.keyboard.press("Enter")
+    page.wait_for_selector(".avvisi-fermata", timeout=15000)
+    didascalia(page, "Alla fermata: l'avviso e i bus che non fermano", "gli itinerari la evitano da soli")
+    page.wait_for_timeout(3800)
+
+    page.goto(BASE + "/admin/#/fermate")
+    page.get_by_role("heading", name="Fermate", exact=True).wait_for(timeout=15000)
+    didascalia(page, "Spostare una fermata", "basta trascinarla sulla mappa e salvare")
+    page.get_by_role("button", name=re.compile(r"^03 · ")).click()
+    page.wait_for_timeout(1200)
+    drag_selected_stop(page, 45, -25)
+    page.wait_for_timeout(800)
+    evidenzia(page, "form button[type=submit]", 500).click()
+    wait_saved(page)
+    page.wait_for_timeout(2200)
+
+    admin_section(page, "Linee e orari", "Linee e orari")
+    didascalia(page, "Linee e orari", "percorso con i minuti, partenze \"dalle 8 alle 12 ogni 30 minuti\", tracciato")
+    page.get_by_role("button", name=re.compile("Circolare A")).first.click()
+    page.wait_for_timeout(1500)
+    scorri(page, 380, 20)
+    page.wait_for_timeout(2600)
+
+    admin_section(page, "Impostazioni", "Impostazioni")
+    didascalia(page, "L'intestazione dell'app", "logo, nome dell'ente, titolo: come la vedono i cittadini")
+    page.wait_for_timeout(3200)
+
+    admin_section(page, "Feed GTFS", "Feed GTFS")
+    didascalia(page, "Il GTFS sempre aggiornato", "da scaricare per il portale open data, Google Maps, Moovit")
+    evidenzia(page, "a:has-text('Scarica il GTFS')", 1600)
+    page.wait_for_timeout(1600)
+
+    senza_didascalia(page)
+    cartello(page, """<h1 style="font-size:60px">QuandoPassa</h1>
+      <p style="font-size:28px;margin-top:20px">Backoffice: fermate · linee e orari · calendari · avvisi · intestazione</p>
+      <p style="font-size:22px;opacity:.85;margin-top:28px">Ogni modifica verificata e pubblicata subito · registro delle modifiche<br>
+      Postgres · Bootstrap Italia · open source EUPL-1.2</p>
+      <p style="font-size:18px;opacity:.7;margin-top:36px">Demo su dati di prova, orologio fisso</p>""", 4400)
+    ctx.close()
+    return Path(page.video.path())
+
+
+def backoffice_screenshots() -> None:
+    folder = RADICE / "docs" / "screenshot"
+    folder.mkdir(parents=True, exist_ok=True)
+    with sync_playwright() as p:
+        browser = p.chromium.launch()
+        ctx = browser.new_context(viewport={"width": 1440, "height": 900}, device_scale_factor=1.5, locale="it-IT",
+                                  geolocation=POSIZIONE, permissions=["geolocation"], timezone_id="Europe/Rome")
+        page = ctx.new_page()
+        admin_login(page)
+        page.wait_for_timeout(500)
+        page.screenshot(path=folder / "09_backoffice.png")
+
+        admin_section(page, "Avvisi", "Avvisi ai cittadini")
+        fill_stop_alert(page)
+        page.evaluate("document.activeElement.blur()")
+        page.wait_for_timeout(800)
+        page.screenshot(path=folder / "10_backoffice_avviso.png")
+        page.get_by_role("button", name="Pubblica l'avviso").click()
+        wait_saved(page)
+
+        admin_section(page, "Fermate", "Fermate")
+        page.get_by_role("button", name=re.compile(r"^02 · ")).click()
+        page.wait_for_timeout(1500)
+        page.screenshot(path=folder / "11_backoffice_fermate.png")
+
+        admin_section(page, "Linee e orari", "Linee e orari")
+        page.get_by_role("button", name=re.compile("Circolare A")).first.click()
+        page.wait_for_timeout(1800)
+        page.screenshot(path=folder / "12_backoffice_linee.png")
+
+        admin_section(page, "Impostazioni", "Impostazioni")
+        page.wait_for_timeout(600)
+        page.screenshot(path=folder / "13_backoffice_impostazioni.png")
+
+        page.goto(BASE + "/")
+        page.wait_for_selector(".barra-avvisi", timeout=20000)
+        page.locator("#cerca-fermata").fill("Plebiscito")
+        page.wait_for_timeout(500)
+        page.keyboard.press("Enter")
+        page.wait_for_selector(".avvisi-fermata", timeout=15000)
+        page.evaluate("document.activeElement.blur()")
+        page.wait_for_timeout(1500)
+        page.screenshot(path=folder / "14_avvisi_app.png")
+        ctx.close()
+        browser.close()
+    print(f"screenshot del backoffice in {folder}")
+
+
 # ---------------------------------------------------------------------------------------------- screenshot
 def screenshot() -> None:
     cartella = RADICE / "docs" / "screenshot"
@@ -412,20 +593,23 @@ def main(argv: list[str]) -> None:
     if not shutil.which("ffmpeg"):
         sys.exit("serve ffmpeg")
     if "--screenshot" in argv:
-        screenshot()
+        backoffice_screenshots() if "--backoffice" in argv else screenshot()
         return
     USCITA.mkdir(parents=True, exist_ok=True)
     shutil.rmtree(GREZZI, ignore_errors=True)
-    verticale, percorso = "--verticale" in argv, "--percorso" in argv
+    verticale, percorso, backoffice = "--verticale" in argv, "--percorso" in argv, "--backoffice" in argv
     with sync_playwright() as p:
         browser = p.chromium.launch()
-        if percorso:
+        if backoffice:
+            grezzo = backoffice_scene(browser)
+            verticale = False
+        elif percorso:
             grezzo = scena_percorso(browser, verticale)
         else:
             grezzo = scena_verticale(browser) if verticale else scena_desktop(browser)
         browser.close()
 
-    nome = "quandopassa-come-arrivo" if percorso else "quandopassa-demo"
+    nome = "quandopassa-backoffice" if backoffice else "quandopassa-come-arrivo" if percorso else "quandopassa-demo"
     if verticale:
         mp4 = USCITA / f"{nome}-verticale.mp4"
         ffmpeg("-i", str(grezzo), "-vf", "scale=1080:1920:flags=lanczos,fps=30", "-c:v", "libx264", "-preset", "slow",
