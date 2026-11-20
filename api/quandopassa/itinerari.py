@@ -6,6 +6,7 @@ stradale. I tratti a piedi sono stimati in linea d'aria corretta per la tortuosi
 from __future__ import annotations
 
 from bisect import bisect_left
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 
@@ -51,8 +52,10 @@ def _tratto_tracciato(tr: Tracciato, i: int, j: int) -> list[list[float]]:
 
 
 class Pianificatore:
-    def __init__(self, orario: Orario):
+    def __init__(self, orario: Orario, closed_stops: Callable[[datetime], set[str]] | None = None):
         self.orario = orario
+        # fermate sospese da un avviso all'istante dato: non si sale, non si scende e non si cambia lì
+        self.closed_stops = closed_stops or (lambda _when: set())
 
     # ------------------------------------------------------------------ indice dei passaggi
     def _passaggi(self, ora: datetime) -> dict[str, list[_Passaggio]]:
@@ -81,8 +84,10 @@ class Pianificatore:
         ora = (istante or self.orario.adesso()).astimezone(self.orario.fuso).replace(second=0, microsecond=0)
         diretta = metri(origine, destinazione)
         o, d = _punto(nome_origine, *origine), _punto(nome_destinazione, *destinazione)
-        salite, discese = self._attorno(*origine), self._attorno(*destinazione)
-        passaggi = self._passaggi(ora)
+        closed = self.closed_stops(ora)
+        salite = {k: v for k, v in self._attorno(*origine).items() if k not in closed}
+        discese = {k: v for k, v in self._attorno(*destinazione).items() if k not in closed}
+        passaggi = {k: v for k, v in self._passaggi(ora).items() if k not in closed}
 
         candidati: list[dict] = []
         if diretta <= SOLO_PIEDI_SOTTO_M:

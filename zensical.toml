@@ -28,6 +28,7 @@ nav = [
   { "Sviluppatori e IT" = [
     { "Installazione" = "installazione.md" },
     { "Configurazione (.env)" = "configurazione.md" },
+    { "Backoffice" = "backoffice.md" },
     { "Architettura e API" = "architettura.md" },
     { "Intelligenza artificiale" = "intelligenza-artificiale.md" },
     { "Server MCP" = "mcp.md" },

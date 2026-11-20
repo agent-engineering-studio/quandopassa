@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Fermata, FermataVicina, Info, Itinerario, LineaDettaglio, Luogo, OrarioGiorno, Partenza } from "./api";
 import { api, hhmm } from "./api";
+import { alertsForStop, closedStopIds } from "./alerts";
 import Assistente from "./components/Assistente";
+import BarraAvvisi, { AvvisoServizio } from "./components/Avvisi";
 import ComeArrivo, { type Campo } from "./components/ComeArrivo";
 import InArrivo from "./components/InArrivo";
 import Mappa from "./components/Mappa";
@@ -44,6 +46,8 @@ export default function App() {
   const watchId = useRef<number | null>(null);
   const ultimaPosVicine = useRef<string>("");
   const testata = useRef<HTMLElement>(null);
+  const [feedChanges, setFeedChanges] = useState(0); // cresce quando il backoffice pubblica un nuovo feed
+  const knownLines = useRef<string[]>([]);
   const riquadro = useRef<HTMLElement>(null);
 
   // ------------------------------------------------------------ dati statici
@@ -53,10 +57,26 @@ export default function App() {
         setInfo(i);
         setFermate(f);
         setLinee(l);
-        setLineeVisibili(l.map((x) => x.id));
+        // dopo un aggiornamento restano nascoste solo le linee che la persona aveva nascosto
+        const ids = l.map((x) => x.id);
+        const known = knownLines.current; // letto ora: l'updater sotto viene eseguito più tardi
+        knownLines.current = ids;
+        setLineeVisibili((prev) => (known.length ? ids.filter((id) => prev.includes(id) || !known.includes(id)) : ids));
       })
       .catch((e) => setErrore((e as Error).message));
-  }, []);
+  }, [feedChanges]);
+
+  // il backoffice può cambiare fermate, orari e avvisi in qualsiasi momento: ogni 2 minuti si controlla la versione
+  useEffect(() => {
+    if (!info) return;
+    const t = setInterval(() => {
+      api
+        .health()
+        .then((h) => h.feed !== info.versione_feed && setFeedChanges((n) => n + 1))
+        .catch(() => undefined);
+    }, 120_000);
+    return () => clearInterval(t);
+  }, [info]);
 
   // orario del giorno (cambia a mezzanotte)
   useEffect(() => {
@@ -68,7 +88,7 @@ export default function App() {
     return () => {
       valido = false;
     };
-  }, [oggi]);
+  }, [oggi, feedChanges]);
 
   const veicoli = useMemo(() => (orario ? veicoliAl(orario, secondiDelGiorno(adesso, orario)) : []), [orario, adesso]);
 
@@ -149,6 +169,12 @@ export default function App() {
 
   const fermataSel = fermate.find((f) => f.id === selezionata) ?? null;
   const fermateById = useMemo(() => new Map(fermate.map((f) => [f.id, f])), [fermate]);
+  const closedStops = useMemo(
+    () => closedStopIds(info?.alerts ?? [], adesso),
+    // ricalcolo al minuto: gli avvisi iniziano e finiscono a orari precisi
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [info, Math.floor(adesso.getTime() / 60000)],
+  );
   const arrivi = useMemo(() => (selezionata ? busInArrivo(veicoli, selezionata) : []), [veicoli, selezionata]);
   const vicinaSel = vicine?.find((v) => v.id === selezionata);
 
@@ -201,8 +227,8 @@ export default function App() {
         <div className="it-header-slim-wrapper">
           <div className="container-fluid px-3 px-lg-4">
             <div className="it-header-slim-wrapper-content">
-              <a className="navbar-brand" href={info.sito}>
-                {info.comune}
+              <a className="navbar-brand" href={info.header.entity_url || info.sito}>
+                {info.header.entity_name}
               </a>
               <div className="it-header-slim-right-zone gap-3">
                 {info.biglietti.url && (
@@ -224,12 +250,16 @@ export default function App() {
               <div className="it-header-center-content-wrapper">
                 <div className="it-brand-wrapper ps-0">
                   <a href="/">
-                    <span className="me-2 text-white d-inline-flex">
-                      <IconaBus dim={40} />
-                    </span>
+                    {info.header.logo_url ? (
+                      <img src={info.header.logo_url} alt={info.header.logo_alt} className="logo-ente me-2" />
+                    ) : (
+                      <span className="me-2 text-white d-inline-flex">
+                        <IconaBus dim={40} />
+                      </span>
+                    )}
                     <div className="it-brand-text">
-                      <div className="it-brand-title">QuandoPassa</div>
-                      <div className="it-brand-tagline">{info.servizio}</div>
+                      <div className="it-brand-title">{info.header.title}</div>
+                      <div className="it-brand-tagline">{info.header.subtitle}</div>
                     </div>
                   </a>
                 </div>
@@ -245,6 +275,7 @@ export default function App() {
             </div>
           </div>
         </div>
+        <BarraAvvisi alerts={info.alerts} now={adesso} />
       </header>
 
       <div className="area">
@@ -283,6 +314,7 @@ export default function App() {
           <div className="mappa-box">
             <Mappa
               info={info}
+              closedStops={closedStops}
               linee={linee}
               fermate={fermate}
               veicoli={veicoli}
@@ -438,6 +470,13 @@ export default function App() {
                 </div>
                 <h2 className="h4 mb-1">{fermataSel.nome}</h2>
                 <p className="small text-muted">{fermataSel.descrizione}</p>
+                {alertsForStop(info.alerts, fermataSel.id, fermataSel.linee ?? []).length > 0 && (
+                  <div className="avvisi-fermata mb-2" role="status">
+                    {alertsForStop(info.alerts, fermataSel.id, fermataSel.linee ?? []).map((a) => (
+                      <AvvisoServizio key={a.id} alert={a} now={adesso} />
+                    ))}
+                  </div>
+                )}
                 {fermataSel.provvisoria && (
                   <div className="alert alert-warning py-2 small">
                     Posizione sulla mappa provvisoria, in attesa di geocoding o sopralluogo.

@@ -16,7 +16,7 @@ export default function Partenze({ partenze, oggi, aPiediMin, onCorsa }: Props) 
       {partenze.map((p) => {
         const margine = aPiediMin !== undefined ? p.tra_minuti - aPiediMin : null;
         return (
-          <li key={p.corsa_id + p.orario}>
+          <li key={p.corsa_id + p.orario} className={p.suspended ? "partenza-sospesa" : undefined}>
             <button
               type="button"
               className="riga-partenza d-flex w-100 justify-content-between align-items-center gap-2 bg-transparent border-0 text-start"
@@ -24,7 +24,11 @@ export default function Partenze({ partenze, oggi, aPiediMin, onCorsa }: Props) 
                 e.stopPropagation();
                 onCorsa?.(p.corsa_id);
               }}
-              aria-label={`Linea ${p.linea} alle ${hhmm(p.orario)}, tra ${traMinuti(p.tra_minuti)}: evidenzia il bus sulla mappa`}
+              aria-label={
+                p.suspended
+                  ? `Linea ${p.linea} alle ${hhmm(p.orario)}: fermata sospesa, il bus non ferma qui`
+                  : `Linea ${p.linea} alle ${hhmm(p.orario)}, tra ${traMinuti(p.tra_minuti)}: evidenzia il bus sulla mappa`
+              }
             >
               <span className="d-flex align-items-center gap-2">
                 <span className="badge badge-linea" style={{ background: p.colore }}>
@@ -42,10 +46,14 @@ export default function Partenze({ partenze, oggi, aPiediMin, onCorsa }: Props) 
                 </span>
               </span>
               <span className="text-end">
-                <span className={`d-block fw-bold tabular ${p.tra_minuti <= 5 ? "imminente" : ""}`}>
-                  {p.tra_minuti <= 0 ? "in partenza" : `tra ${traMinuti(p.tra_minuti)}`}
-                </span>
-                {margine !== null && p.tra_minuti < 120 && (
+                {p.suspended ? (
+                  <span className="esito esito-no">fermata sospesa</span>
+                ) : (
+                  <span className={`d-block fw-bold tabular ${p.tra_minuti <= 5 ? "imminente" : ""}`}>
+                    {p.tra_minuti <= 0 ? "in partenza" : `tra ${traMinuti(p.tra_minuti)}`}
+                  </span>
+                )}
+                {!p.suspended && margine !== null && p.tra_minuti < 120 && (
                   <span className={`esito ${margine >= 2 ? "esito-ok" : margine >= 0 ? "esito-attenzione" : "esito-no"}`}>
                     {margine >= 2 ? `fai in tempo (+${margine} min)` : margine >= 0 ? "affrettati" : "non fai in tempo"}
                   </span>

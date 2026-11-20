@@ -5,6 +5,7 @@
 #   docker compose --profile llm up --build       + LLM locale con Ollama (modello piccolo, CPU)
 #   docker compose --profile demo up --build -d   + istanza demo su :8001 (orologio fisso, per i video)
 #   docker compose --profile test run --rm test   suite pytest
+#   docker compose --profile backoffice up -d     + Postgres per il backoffice /admin (make backoffice lo configura)
 #
 # Il feed GTFS è la cartella indicata da GTFS_DIR nel .env, montata in sola lettura.
 name: quandopassa
@@ -20,9 +21,33 @@ services:
       INFERENCE_URL: http://inference:8080
     volumes:
       - ${GTFS_DIR:-./data}:/srv/gtfs:ro
+      # backoffice: feed generato, impostazioni e logo (DATA_DIR=/srv/dati nel .env)
+      - dati:/srv/dati
     depends_on:
       inference:
         condition: service_healthy
+      db:
+        condition: service_healthy
+        required: false
+    restart: unless-stopped
+
+  # database del backoffice (profilo "backoffice"): fermate, linee, orari, avvisi, impostazioni, registro.
+  # L'app pubblica legge i file GTFS generati: se il database si ferma, mappa e orari funzionano comunque.
+  db:
+    container_name: quandopassa-db
+    image: postgres:17.6-alpine
+    profiles: ["backoffice"]
+    environment:
+      POSTGRES_USER: quandopassa
+      POSTGRES_DB: quandopassa
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+    volumes: ["postgres:/var/lib/postgresql/data"]
+    expose: ["5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quandopassa -d quandopassa"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
     restart: unless-stopped
 
   # istanza demo (profilo "demo"): orologio fisso su un mercoledì mattina, quando circolano A e B.
@@ -37,6 +62,9 @@ services:
       GTFS_DIR: /srv/gtfs
       INFERENCE_URL: http://inference:8080
       DEMO_ORA: ${DEMO_ORA_ISTANZA_DEMO:-2026-11-11T09:00:00}
+      # la demo non ha backoffice e non scrive nella cartella dati
+      DATA_DIR: ""
+      ADMIN_USER: ""
     volumes:
       - ${GTFS_DIR:-./data}:/srv/gtfs:ro
     depends_on:
@@ -89,6 +117,26 @@ services:
       context: .
       dockerfile: tests.Dockerfile
     profiles: ["test"]
+    environment:
+      TEST_DATABASE_URL: postgresql://quandopassa:test@db-test:5432/quandopassa
+    depends_on:
+      db-test:
+        condition: service_healthy
+
+  # Postgres usa e getta per i test del backoffice
+  db-test:
+    container_name: quandopassa-db-test
+    image: postgres:17.6-alpine
+    profiles: ["test"]
+    environment: { POSTGRES_USER: quandopassa, POSTGRES_DB: quandopassa, POSTGRES_PASSWORD: test }
+    tmpfs: ["/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U quandopassa -d quandopassa"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
 
 volumes:
   modelli:
+  dati:
+  postgres:

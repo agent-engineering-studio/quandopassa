@@ -13,7 +13,8 @@ e l'azienda hanno già, **l'orario**, e lo trasforma in un servizio informativo 
 |---|---|
 | **Nessun hardware** | Niente GPS, SIM o centrale: le posizioni sono stimate dall'orario GTFS lungo il percorso stradale. |
 | **Informazione al cittadino** | Mappa, fermata più vicina, bus in arrivo, "fai in tempo", **come arrivo** con cambi e assistente in italiano, dal telefono. |
-| **Nessun dato personale** | Nessun account e nessun database: la posizione resta sul telefono, l'assistente non riceve dati personali. |
+| **Nessun dato personale** | Nessun account per i cittadini e nessun loro dato salvato: la posizione resta sul telefono, l'assistente non riceve dati personali. |
+| **Backoffice** | L'ufficio trasporti cambia fermate, linee, orari e calendari, pubblica avvisi (fermate sospese, deviazioni, scioperi) e personalizza logo e intestazione, senza chiamare un tecnico. Vedi [Backoffice](backoffice.md). |
 | **Design della PA** | Interfaccia [Bootstrap Italia](https://italia.github.io/bootstrap-italia/) (Designers Italia), accessibile, con font e icone in locale: nessuna CDN di terzi. |
 | **Dati aperti** | Il feed GTFS è uno standard: lo stesso file alimenta QuandoPassa, Google Maps, Moovit e i portali open data. |
 | **Pensiline** | Le fermate sono le 20 aree della proposta di localizzazione delle pensiline: la mappa aiuta a discuterle e verificarle. |
@@ -29,8 +30,8 @@ e l'azienda hanno già, **l'orario**, e lo trasforma in un servizio informativo 
    indicata da `GTFS_DIR`. Vedi [Il feed GTFS e le fermate](gtfs.md).
 2. **Le coordinate delle fermate.** Il geocoding da OpenStreetMap dà posizioni indicative; dopo il sopralluogo
    si scrivono quelle rilevate e restano fisse.
-3. **Un server.** Tre container Docker, nessun database: una piccola macchina virtuale basta. Vedi
-   [Installazione](installazione.md).
+3. **Un server.** Una piccola macchina virtuale Linux basta (2 vCPU e 2 GB di RAM anche con il backoffice),
+   con Docker o con lo script di installazione. Vedi [Installazione](installazione.md).
 
 ## Limiti dichiarati
 

@@ -25,6 +25,17 @@ su righe proprie. Dopo ogni modifica: `make up`.
 | `LINK_BIGLIETTI` | vuoto | Indirizzo del sistema di acquisto online dell'azienda di trasporto: mostra il pulsante "Acquista il biglietto". QuandoPassa non vende biglietti né gestisce pagamenti. Vuoto = nessun pulsante. |
 | `BIGLIETTERIA_NOME` | vuoto | Nome del gestore della biglietteria, mostrato accanto al pulsante |
 
+## Intestazione dell'app
+
+Si cambiano anche dal [backoffice](backoffice.md) (Impostazioni), dove si carica il logo: il valore salvato lì ha
+la precedenza su quello del `.env`.
+
+| Variabile | Predefinito | Significato |
+|---|---|---|
+| `APP_TITLE` | `QuandoPassa` | Titolo accanto al logo |
+| `ENTITY_URL` | vuoto | Sito dell'ente, collegato al nome in alto a sinistra; vuoto = sito dell'azienda di trasporto |
+| `LOGO_ALT` | vuoto | Testo alternativo del logo per i lettori di schermo; vuoto = logo decorativo |
+
 ## Mappa
 
 | Variabile | Predefinito | Significato |
@@ -62,3 +73,23 @@ dall'app: una riformulazione con numeri diversi viene scartata.
 
 L'[istanza demo](installazione.md#istanza-demo) imposta da sé `DEMO_ORA` (variabile `DEMO_ORA_ISTANZA_DEMO`
 nel `.env` per cambiarla), senza toccare l'app principale.
+
+## Backoffice
+
+Spento finché `ADMIN_USER` è vuoto. Il modo più semplice per attivarlo è `make backoffice` (Docker) o
+`sudo ./deploy/install.sh --backoffice` (macchina virtuale), che compilano queste righe. Vedi
+[Backoffice](backoffice.md).
+
+| Variabile | Predefinito | Significato |
+|---|---|---|
+| `ADMIN_USER` | vuoto | Utente del backoffice; vuoto = backoffice spento |
+| `ADMIN_PASSWORD_HASH` | vuoto | Hash scrypt della password (`make password`); mai la password in chiaro |
+| `ADMIN_SECRET` | vuoto | Chiave casuale che firma le sessioni (almeno 32 caratteri); vuota = nuova a ogni avvio |
+| `DATA_DIR` | vuoto | Cartella scrivibile con il feed generato, le impostazioni e il logo (Docker: `/srv/dati`, VM: `/var/lib/quandopassa`). Con `DATA_DIR` l'app legge il feed da qui e non più da `GTFS_DIR`, che serve solo al primo avvio. |
+| `DATABASE_URL` | vuoto | Connessione a Postgres, es. `postgresql://quandopassa:PASSWORD@db:5432/quandopassa` |
+| `POSTGRES_PASSWORD` | vuoto | Password del database nel profilo Docker `backoffice` (uguale a quella in `DATABASE_URL`) |
+| `OSRM_URL` | server OSRM pubblico | Calcolo dei tracciati stradali delle linee dal backoffice. Il server pubblico è solo per prove: in esercizio un'istanza dell'ente, oppure vuoto (funzione spenta). |
+
+Le impostazioni dell'intestazione, della mappa, della ricerca dei luoghi e dei biglietti modificate dal backoffice
+hanno la precedenza sul `.env`; nel backoffice "Torna al valore del .env" annulla la modifica.
+

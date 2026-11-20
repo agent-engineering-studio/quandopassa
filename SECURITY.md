@@ -17,7 +17,10 @@ Controlli da eseguire a ogni rilascio:
 
 Scelte di progetto rilevanti per la sicurezza:
 
-- nessun database, nessun account, nessun segreto applicativo: non ci sono credenziali da proteggere nell'app;
+- senza backoffice: nessun database, nessun account, nessun segreto applicativo;
+- con il backoffice: un solo utente con password salvata come hash scrypt nel `.env`, sessione in cookie
+  `HttpOnly`/`SameSite=Strict` firmato, token CSRF su ogni modifica, blocco dopo 5 tentativi, registro delle
+  modifiche; credenziali e configurazione di sistema non modificabili dal web; logo solo immagini senza script;
 - container non-root; il server di inferenza non è esposto fuori dalla rete di Compose; il server MCP ascolta
   solo su `127.0.0.1` con protezione da DNS rebinding ed è in sola lettura;
 - i log di accesso non contengono coordinate né il testo delle domande all'assistente;
