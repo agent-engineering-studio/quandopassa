@@ -6,7 +6,7 @@
 site_name = "QuandoPassa"
 site_description = "Il bus urbano sulla mappa, stimato dall'orario GTFS: fermata più vicina, bus in arrivo, assistente IA e server MCP"
 site_author = "Giuseppe Zileni"
-site_url = "https://agent-engineering-studio.github.io/quandopassa/"
+site_url = "https://agentengineering.it/quandopassa/"
 repo_url = "https://github.com/agent-engineering-studio/quandopassa"
 repo_name = "agent-engineering-studio/quandopassa"
 edit_uri = "edit/main/docs/"
