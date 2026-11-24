@@ -41,7 +41,7 @@ export default function BikeStations({ stations, title, onStation }: Props) {
         ))}
       </ul>
       <p className="small text-muted mt-2 mb-0">
-        Bici di {[...new Set(stations.map((s) => s.system))].join(", ")}: noleggio e pagamento nell'app del gestore.
+        Servizio {[...new Set(stations.map((s) => s.system))].join(", ")}: noleggio e pagamento nell'app del gestore.
       </p>
     </section>
   );

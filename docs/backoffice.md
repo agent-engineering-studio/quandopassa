@@ -19,6 +19,7 @@ utente e password (scritti nel file `.env`); ogni modifica si vede **subito** su
 | **Fermate** | Elenco e mappa; si sposta una fermata trascinando il punto; nuove fermate con un clic sulla mappa |
 | **Linee e orari** | Percorso con i minuti dalla partenza, partenze dal capolinea (anche "dalle 8 alle 12 ogni 30 minuti"), colori, tracciato su strada |
 | **Calendari** | Giorni di servizio ed eccezioni |
+| **Bike sharing** | Stazioni di bici condivise: import dal feed **GBFS** del gestore con anteprima, stazioni sulla mappa con le fermate del bus vicine, disponibilità in tempo reale |
 | **Feed GTFS** | Azienda di trasporto, periodo di validità, **download del GTFS** (zip) |
 | **Impostazioni** | **Intestazione dell'app** (logo, nome dell'ente e collegamento al suo sito, titolo, sottotitolo), mappa, ricerca dei luoghi, biglietti |
 | **Registro** | Chi ha modificato cosa e quando |
@@ -36,6 +37,8 @@ utente e password (scritti nel file `.env`); ogni modifica si vede **subito** su
 ![Intestazione dell'app e impostazioni](screenshot/13_backoffice_impostazioni.png)
 
 ![L'avviso nell'app dei cittadini](screenshot/14_avvisi_app.png)
+
+![Bike sharing: import GBFS e stazioni con le fermate vicine](screenshot/16_backoffice_bike_sharing.png)
 
 </div>
 
@@ -87,6 +90,10 @@ VAIMOO, dove il Comune ha un accordo con il gestore).
   che rispetta il `ttl` del feed (da 30 a 300 secondi). La posizione di chi usa l'app non arriva mai al gestore.
   Se il gestore non risponde le stazioni restano visibili senza i numeri. «Verifica disponibilità» prova il
   collegamento.
+
+Nell'app dei cittadini le stazioni compaiono sulla mappa come quadrati verdi con le bici libere, con il
+pulsante **Bici** per mostrarle o nasconderle e le stazioni più vicine nella scheda della fermata (vedi
+[Usare QuandoPassa](cittadini.md#bici-condivise)).
 
 Le stazioni pubblicate sono in `bike_sharing.json` accanto al feed GTFS (non fanno parte del GTFS) e nelle API
 pubbliche `GET /api/v1/bikes/stations` e `GET /api/v1/bikes/nearby?lat&lon`; la scheda di una fermata

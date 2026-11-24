@@ -107,6 +107,7 @@ nell'app, il GTFS si scarica sempre aggiornato. [Scopri il backoffice](backoffic
 | Faccio in tempo? | a occhio | **"fai in tempo"**, **"affrettati"**, **"non fai in tempo"** |
 | Come arrivo | bisogna conoscere le linee | **itinerario** a piedi + bus, con il cambio e l'orario di arrivo |
 | Domande | telefono all'azienda | **assistente IA** in italiano, orari calcolati dall'app |
+| Bici condivise | un'altra app da aprire | **stazioni di bike sharing** sulla mappa, accanto alle fermate |
 | Lavori, scioperi, deviazioni | un cartello alla fermata | **avviso** nell'app, fermata sospesa sulla mappa, itinerari che la evitano |
 | Aggiornare fermate e orari | un tecnico | **backoffice** dell'ufficio trasporti, mappa aggiornata subito |
 | Altri sistemi | nessuna integrazione | **API aperte** e **server MCP** |

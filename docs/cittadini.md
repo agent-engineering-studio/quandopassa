@@ -97,6 +97,8 @@ vedi bici e stalli liberi e il link **Noleggia**, che apre l'app del gestore: Qu
 pagamenti. In **Vicino a te** e nella scheda di una fermata trovi le stazioni più vicine; la distanza è calcolata
 sul tuo dispositivo, la posizione non viene inviata a nessuno.
 
+![Stazioni di bike sharing sulla mappa e vicino alla fermata](screenshot/15_bici_app.png)
+
 ## 7. Chiedi all'assistente
 
 Nella scheda **Chiedi** puoi scrivere come parleresti a una persona:
