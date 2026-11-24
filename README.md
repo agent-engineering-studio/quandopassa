@@ -32,6 +32,7 @@ Una pagina web, dal telefono o dal computer: niente app da installare, niente re
 | Chiedi all'**assistente** *"come arrivo al cimitero?"* | La stessa risposta, in italiano |
 | Tocchi **Acquista il biglietto** | Si apre la biglietteria online dell'azienda di trasporto: QuandoPassa non vende biglietti |
 | Ci sono lavori, scioperi o deviazioni | Un **avviso** in alto; la fermata sospesa è segnata in rosso e gli itinerari la evitano |
+| Tocchi **Bici** | Le stazioni di **bike sharing** con le bici libere, le più vicine a te e alla fermata, e il link all'app del gestore per il noleggio |
 
 **Onestà sui dati.** Senza GPS a bordo il ritardo non è misurabile: l'app scrive "Ritardo: non rilevabile"
 invece di un "in orario" che non può verificare. La posizione resta sul telefono e non viene salvata.
@@ -44,6 +45,11 @@ invece di un "in orario" che non può verificare. La posizione resta sul telefon
 evita.
 
 ![Avviso di fermata sospesa nell'app](docs/screenshot/14_avvisi_app.png)
+
+**Bici condivise**: le stazioni di bike sharing sulla mappa, con bici e stalli liberi se il gestore li pubblica.
+Le distanze si calcolano sul telefono, la posizione non viene inviata a nessuno.
+
+![Stazioni di bike sharing sulla mappa e vicino alla fermata](docs/screenshot/15_bici_app.png)
 
 → [Guida per i cittadini](https://agentengineering.it/quandopassa/cittadini/) ·
 [video verticale](docs/demo/quandopassa-demo-verticale.mp4) ·
@@ -62,6 +68,7 @@ evita.
 | **Pensiline** | Le fermate sono le 20 aree della proposta di localizzazione delle pensiline, geocodificate su OpenStreetMap. |
 | **IA sotto controllo** | Uso informativo a basso rischio (AI Act art. 50), motore predefinito offline, orari mai inventati dal modello. |
 | **Dati aperti e integrazione** | Feed GTFS standard, API JSON aperte e server MCP. |
+| **Bus e bici insieme** | Le stazioni di bike sharing (per esempio un servizio in convenzione con il Comune) si importano dal feed **GBFS** del gestore o si inseriscono a mano; i cittadini le vedono accanto alle fermate. Noleggio e pagamento restano nell'app del gestore. |
 | **Biglietti fuori dal sito** | Nessuna vendita né pagamento: un pulsante porta alla biglietteria online del gestore (`LINK_BIGLIETTI`). |
 | **Riuso** | Un altro Comune cambia il feed GTFS e il file `.env` (o lo fa dal backoffice); codice EUPL-1.2 con `publiccode.yml`. |
 
@@ -73,6 +80,7 @@ evita.
 |---|---|
 | ![Cruscotto](docs/screenshot/09_backoffice.png) **Cruscotto**: feed pubblicato, avvisi, cose da controllare | ![Nuovo avviso](docs/screenshot/10_backoffice_avviso.png) **Avvisi**: fermate sospese, deviazioni, scioperi |
 | ![Fermate](docs/screenshot/11_backoffice_fermate.png) **Fermate**: si spostano trascinandole sulla mappa | ![Linee](docs/screenshot/12_backoffice_linee.png) **Linee e orari**: percorso, minuti, partenze |
+| ![Bike sharing](docs/screenshot/16_backoffice_bike_sharing.png) **Bike sharing**: import GBFS con anteprima, stazioni e fermate vicine | ![Impostazioni](docs/screenshot/13_backoffice_impostazioni.png) **Impostazioni**: logo, intestazione, mappa, biglietti |
 
 [video MP4 del backoffice](docs/demo/quandopassa-backoffice.mp4) ·
 [tutti i video e gli screenshot](https://agentengineering.it/quandopassa/video/)
@@ -163,14 +171,14 @@ Tutte le opzioni (per esempio `--admin-da 10.0.0.0/8` per aprire il backoffice s
 Quattro container: app, inferenza, MCP e **Postgres** per il backoffice:
 
 - **app** (`api/` + `web/`): FastAPI con il motore GTFS (posizioni stimate, partenze, fermate vicine, ricerca),
-  il calcolo degli itinerari con cambi (`itinerari.py`), la ricerca dei luoghi su OpenStreetMap e l'assistente; interfaccia React con Vite, Bootstrap Italia e Leaflet su OpenStreetMap.
+  il calcolo degli itinerari con cambi (`itinerari.py`), il bike sharing GBFS (`bikes.py`), la ricerca dei luoghi su OpenStreetMap e l'assistente; interfaccia React con Vite, Bootstrap Italia e Leaflet su OpenStreetMap.
   L'interfaccia scarica una volta l'orario del giorno e anima i bus da sola, allineata all'ora del server.
 - **inference** (`inference/`): server OpenAI-compatibile, backend `rules` (offline, predefinito) o `openai`
   (Ollama del profilo `llm`, vLLM, Azure OpenAI…). L'IA capisce la domanda, l'app calcola la risposta, l'LLM può
   solo riformularla: una riformulazione con numeri diversi viene scartata.
 - **mcp** (`mcp_server/`): server MCP in sola lettura con `cerca_fermata`, `fermate_vicine`,
   `prossime_partenze`, `bus_in_servizio`, `come_arrivare`, `orari_linea`, `chiedi_assistente`.
-- **backoffice** (`/admin`, nell'app): fermate, linee, orari, calendari, avvisi e intestazione in Postgres.
+- **backoffice** (`/admin`, nell'app): fermate, linee, orari, calendari, avvisi, bike sharing e intestazione in Postgres.
   A ogni salvataggio il feed GTFS viene rigenerato, verificato e ricaricato senza riavvio; l'app pubblica legge
   solo i file, quindi funziona anche se il database si ferma.
 

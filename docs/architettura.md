@@ -85,16 +85,20 @@ facoltativo `ora` (ISO 8601) calcola la risposta per un altro istante.
 | GET | `/luoghi?q` | fermate, indirizzi e luoghi per scegliere partenza e arrivo |
 | GET | `/percorso?lat&lon&a` | bus diretto verso una fermata (compatibilità) |
 | GET | `/assistente?testo&lat&lon` | assistente IA |
+| GET | `/bikes/stations` | sistemi e stazioni di bike sharing, con bici e stalli liberi se il gestore pubblica `station_status` (cache sul `ttl` GBFS) |
+| GET | `/bikes/nearby?lat&lon&n&radius` | stazioni di bike sharing più vicine con distanza e minuti a piedi |
 | GET | `/alerts?ora` | avvisi di servizio in corso e della prossima settimana: `kind` (`info`, `detour`, `stop_closed`, `service_suspended`), periodo, linee, fermate, tracciato della deviazione |
 
 Le partenze da una fermata sospesa hanno `suspended: true`; `/fermate` indica le fermate sospese adesso
 (`closed`) e `/fermate/{id}` gli avvisi che la riguardano (`alerts`). `/info` contiene anche gli avvisi
-(`alerts`) e l'intestazione dell'app (`header`: titolo, ente, logo).
+(`alerts`), l'intestazione dell'app (`header`: titolo, ente, logo) e i sistemi di bike sharing (`bike_sharing`);
+`/fermate/{id}` elenca le stazioni di bike sharing entro 300 m (`bikes_nearby`).
 
 ## API del backoffice
 
 Su `/api/admin`, solo dopo l'accesso (cookie di sessione e intestazione `X-CSRF-Token` per le modifiche):
 `login`, `logout`, `session`, `status`, `data`, `stops`, `calendars`, `variants` (linee, percorsi e partenze),
-`variants/{id}/shape` (tracciato, anche calcolato con OSRM), `feed`, `alerts`, `settings`, `logo`, `audit`,
+`variants/{id}/shape` (tracciato, anche calcolato con OSRM), `bikes` (sistemi, stazioni, import GBFS da URL o
+file con `dry_run`, verifica della disponibilità), `feed`, `alerts`, `settings`, `logo`, `audit`,
 `export.zip`. Ogni modifica restituisce il riepilogo del feed rigenerato e gli avvisi di verifica; se il feed
 avrebbe errori risponde 422 con l'elenco e non salva nulla.

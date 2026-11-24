@@ -72,6 +72,8 @@ una fermata sulla mappa, apre una linea, l'intestazione dell'app e il download d
 
 ![Avviso di fermata sospesa nell'app](screenshot/14_avvisi_app.png)
 
+![Bici condivise sulla mappa](screenshot/15_bici_app.png)
+
 ![Backoffice: cruscotto](screenshot/09_backoffice.png)
 
 ![Backoffice: nuovo avviso](screenshot/10_backoffice_avviso.png)
@@ -81,6 +83,8 @@ una fermata sulla mappa, apre una linea, l'intestazione dell'app e il download d
 ![Backoffice: linee e orari](screenshot/12_backoffice_linee.png)
 
 ![Backoffice: intestazione e impostazioni](screenshot/13_backoffice_impostazioni.png)
+
+![Backoffice: bike sharing](screenshot/16_backoffice_bike_sharing.png)
 
 </div>
 

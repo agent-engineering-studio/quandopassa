@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import type { Fermata, FermataVicina, Info, Itinerario, LineaDettaglio, Luogo, OrarioGiorno, Partenza } from "./api";
+import type { BikeStation, Fermata, FermataVicina, Info, Itinerario, LineaDettaglio, Luogo, OrarioGiorno, Partenza } from "./api";
 import { api, hhmm } from "./api";
 import { alertsForStop, closedStopIds } from "./alerts";
+import { NEARBY_STOP_METERS, nearbyBikeStations } from "./bikes";
+import BikeStations from "./components/BikeStations";
 import Assistente from "./components/Assistente";
 import BarraAvvisi, { AvvisoServizio } from "./components/Avvisi";
 import ComeArrivo, { type Campo } from "./components/ComeArrivo";
@@ -46,6 +48,8 @@ export default function App() {
   const watchId = useRef<number | null>(null);
   const ultimaPosVicine = useRef<string>("");
   const testata = useRef<HTMLElement>(null);
+  const [bikeStations, setBikeStations] = useState<BikeStation[]>([]);
+  const [showBikes, setShowBikes] = useState(true);
   const [feedChanges, setFeedChanges] = useState(0); // cresce quando il backoffice pubblica un nuovo feed
   const knownLines = useRef<string[]>([]);
   const riquadro = useRef<HTMLElement>(null);
@@ -77,6 +81,26 @@ export default function App() {
     }, 120_000);
     return () => clearInterval(t);
   }, [info]);
+
+  // bike sharing: stazioni pubblicate dal backoffice; se il gestore dà la disponibilità si aggiorna ogni minuto
+  const bikeSystems = info?.bike_sharing ?? [];
+  const bikesLive = bikeSystems.some((b) => b.live);
+  useEffect(() => {
+    if (!bikeSystems.length) {
+      setBikeStations([]);
+      return;
+    }
+    const load = () =>
+      api
+        .bikeStations()
+        .then((r) => setBikeStations(r.stations))
+        .catch(() => undefined); // restano le ultime stazioni ricevute
+    load();
+    if (!bikesLive) return;
+    const t = setInterval(load, 60_000);
+    return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [info, bikeSystems.length, bikesLive]);
 
   // orario del giorno (cambia a mezzanotte)
   useEffect(() => {
@@ -177,6 +201,18 @@ export default function App() {
   );
   const arrivi = useMemo(() => (selezionata ? busInArrivo(veicoli, selezionata) : []), [veicoli, selezionata]);
   const vicinaSel = vicine?.find((v) => v.id === selezionata);
+  const bikesNearStop = useMemo(
+    () => (fermataSel ? nearbyBikeStations(bikeStations, fermataSel.lat, fermataSel.lon, 3, NEARBY_STOP_METERS) : []),
+    [bikeStations, fermataSel],
+  );
+  const bikesNearMe = useMemo(
+    () => (posizione ? nearbyBikeStations(bikeStations, posizione.lat, posizione.lon, 2, 800) : []),
+    [bikeStations, posizione],
+  );
+  const showBikeStation = (b: BikeStation) => {
+    setShowBikes(true);
+    setCentraSu([b.lat, b.lon]);
+  };
 
   // ------------------------------------------------------------ render
   if (errore)
@@ -281,7 +317,7 @@ export default function App() {
       <div className="area">
         <div className="colonna-mappa">
           <div className="barra px-3 py-2 d-flex flex-wrap align-items-center gap-2">
-            <ul className="list-unstyled d-flex gap-2 mb-0" aria-label="Linee mostrate sulla mappa">
+            <ul className="list-unstyled d-flex flex-wrap gap-2 mb-0" aria-label="Linee mostrate sulla mappa">
               {linee.map((l) => {
                 const attiva = lineeVisibili.includes(l.id);
                 return (
@@ -300,6 +336,19 @@ export default function App() {
                   </li>
                 );
               })}
+              {bikeStations.length > 0 && (
+                <li>
+                  <button
+                    type="button"
+                    className="chip chip-lg chip-linea chip-bici"
+                    aria-pressed={showBikes}
+                    onClick={() => setShowBikes((v) => !v)}
+                    title="Stazioni di bike sharing"
+                  >
+                    <span className="chip-label">Bici</span>
+                  </button>
+                </li>
+              )}
             </ul>
             <CercaFermata
               fermate={fermate}
@@ -328,6 +377,7 @@ export default function App() {
               }}
               centraSu={centraSu}
               itinerario={pannello === "percorso" ? itinerario : null}
+              bikeStations={showBikes ? bikeStations : []}
               sceltaPunto={sceltaCampo !== null}
               onPunto={(lat, lon) => {
                 if (!sceltaCampo) return;
@@ -452,6 +502,7 @@ export default function App() {
                       <Partenze partenze={v.partenze} oggi={oggi} aPiediMin={v.a_piedi_min} onCorsa={setCorsaEvidenziata} />
                     </article>
                   ))}
+                  <BikeStations stations={bikesNearMe} title="Bici condivise vicino a te" onStation={showBikeStation} />
                 </div>
               ))}
 
@@ -521,6 +572,11 @@ export default function App() {
                 </button>
                 <h3 className="h5 mt-3">Prossimi passaggi</h3>
                 <Partenze partenze={partenze} oggi={oggi} aPiediMin={vicinaSel?.a_piedi_min} onCorsa={setCorsaEvidenziata} />
+                {bikesNearStop.length > 0 && (
+                  <div className="mt-3">
+                    <BikeStations stations={bikesNearStop} title="Bici condivise vicino alla fermata" onStation={showBikeStation} />
+                  </div>
+                )}
               </div>
             )}
 

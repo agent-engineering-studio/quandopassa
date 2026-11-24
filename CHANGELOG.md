@@ -10,6 +10,9 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e il v
   modifiche; le stazioni modificate a mano non vengono sovrascritte. Disponibilità di bici e stalli letta lato
   server da `station_status` con cache sul `ttl`. API pubbliche `/api/v1/bikes/stations` e `/api/v1/bikes/nearby`,
   `bikes_nearby` nella scheda della fermata, `bike_sharing` in `/info`.
+- **Bici condivise sulla mappa dei cittadini**: stazioni con le bici libere, pulsante «Bici» per mostrarle o
+  nasconderle, link «Noleggia» all'app del gestore, stazioni vicine in «Vicino a te» e nella scheda della
+  fermata (distanze calcolate sul dispositivo). Disponibilità aggiornata ogni minuto.
 - **Backoffice** `/admin` per l'ufficio trasporti (React + Vite, Bootstrap Italia): fermate sulla mappa,
   linee con percorso, minuti e partenze, calendari ed eccezioni, agenzia e validità del feed, intestazione
   dell'app (logo, ente, titolo), impostazioni di mappa, ricerca e biglietti, registro delle modifiche.

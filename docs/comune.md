@@ -19,6 +19,7 @@ e l'azienda hanno già, **l'orario**, e lo trasforma in un servizio informativo 
 | **Dati aperti** | Il feed GTFS è uno standard: lo stesso file alimenta QuandoPassa, Google Maps, Moovit e i portali open data. |
 | **Pensiline** | Le fermate sono le 20 aree della proposta di localizzazione delle pensiline: la mappa aiuta a discuterle e verificarle. |
 | **IA sotto controllo** | Uso informativo a basso rischio, dichiarato (AI Act art. 50); motore predefinito offline, nessun dato a terzi. |
+| **Bus e bici** | Le stazioni di bike sharing si importano dal feed **GBFS** del gestore (o si inseriscono a mano) e compaiono accanto alle fermate, con le bici libere. Noleggio e pagamento restano nell'app del gestore. Vedi [Backoffice](backoffice.md#il-bike-sharing). |
 | **Biglietti** | Il servizio non vende biglietti e non tratta pagamenti: un pulsante porta alla biglietteria online del gestore (`LINK_BIGLIETTI`). |
 | **Integrazione** | API JSON aperte e un server MCP: lo stesso servizio può rispondere dentro altri assistenti e portali. |
 | **Riuso** | Codice EUPL-1.2 con `publiccode.yml`: un altro Comune cambia il feed GTFS e il file `.env`. |

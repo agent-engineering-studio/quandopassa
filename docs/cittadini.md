@@ -89,6 +89,16 @@ sospesa è segnata **in rosso** sulla mappa, nella sua scheda trovi l'avviso e l
 QuandoPassa non vende biglietti. Nella scheda **Servizio** trovi tariffe e informazioni e, se il gestore ha una
 biglietteria online, il pulsante **Acquista il biglietto** che apre il suo sito: acquisto e pagamento avvengono lì.
 
+### Bici condivise
+
+Se il Comune ha un servizio di bike sharing, sulla mappa compaiono le stazioni (**quadrati verdi** con il numero
+di bici libere; grigi se non ce ne sono) e il pulsante **Bici** per mostrarle o nasconderle. Toccando una stazione
+vedi bici e stalli liberi e il link **Noleggia**, che apre l'app del gestore: QuandoPassa non gestisce noleggi né
+pagamenti. In **Vicino a te** e nella scheda di una fermata trovi le stazioni più vicine; la distanza è calcolata
+sul tuo dispositivo, la posizione non viene inviata a nessuno.
+
+![Stazioni di bike sharing sulla mappa e vicino alla fermata](screenshot/15_bici_app.png)
+
 ## 7. Chiedi all'assistente
 
 Nella scheda **Chiedi** puoi scrivere come parleresti a una persona:

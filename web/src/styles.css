@@ -137,6 +137,18 @@ html, body { overflow-x: hidden; }
 .passo-bus .passo-icona { margin-left: -1.55rem; }
 .cambio { color: #7a4b00; font-weight: 600; }
 .pin-arrivo { background: none; border: none; }
+/* bike sharing */
+.bici-icona { background: none; border: none; }
+.bici { width: 28px; height: 28px; border-radius: 6px; background: #00805a; color: #fff; border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.35); display: flex; align-items: center; justify-content: center; gap: 1px;
+  font: 700 11px/1 "Titillium Web", sans-serif; }
+.bici-vuota { background: #6f7a85; }
+.chip-bici { --c: #00805a; }
+.bici-riga { display: flex; align-items: center; gap: .5rem; }
+.bici-riga .btn-link { display: flex; align-items: center; gap: .6rem; color: inherit; }
+.bici-segno { flex: none; width: 28px; height: 28px; border-radius: 6px; background: #00805a; color: #fff;
+  display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: .8rem; }
+.btn-xs { padding: .15rem .5rem; font-size: .8rem; }
 
 .card-biglietti { border: 2px solid #0066cc; border-radius: 4px; background: #f2f7fc; }
 
