@@ -1,7 +1,8 @@
 import L from "leaflet";
 import { Fragment, useEffect, useMemo } from "react";
-import { Circle, CircleMarker, MapContainer, Marker, Polyline, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
-import type { Fermata, Info, Itinerario, LineaDettaglio } from "../api";
+import { Circle, CircleMarker, MapContainer, Marker, Polyline, Popup, TileLayer, Tooltip, useMap, useMapEvents } from "react-leaflet";
+import type { BikeStation, Fermata, Info, Itinerario, LineaDettaglio } from "../api";
+import { availabilityText } from "../bikes";
 import type { Veicolo } from "../motore";
 import { hhmmDaSecondi } from "../motore";
 
@@ -20,6 +21,7 @@ interface Props {
   itinerario?: Itinerario | null;
   sceltaPunto?: boolean;
   onPunto?: (lat: number, lon: number) => void;
+  bikeStations?: BikeStation[];
 }
 
 const iconaArrivo = L.divIcon({
@@ -104,6 +106,26 @@ function creaIcona(lettera: string, colore: string, direzione: number, evidenzia
       <div class="bus-corpo"><svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M6 2h12a3 3 0 0 1 3 3v11a2 2 0 0 1-1 1.7V20a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1v-1H7v1a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-2.3A2 2 0 0 1 3 16V5a3 3 0 0 1 3-3Zm0 3v6h12V5H6Zm1.5 8.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Zm9 0a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3Z"/></svg><b>${lettera}</b></div>
     </div>`,
   });
+}
+
+const bikeIcons = new Map<string, L.DivIcon>();
+
+// stazione di bike sharing: quadrato verde con le bici libere (grigio se non ce ne sono)
+function bikeIcon(s: BikeStation) {
+  const known = s.live && s.bikes !== null;
+  const empty = known && (s.bikes === 0 || s.renting === false);
+  const text = known ? String(s.bikes) : "";
+  const key = `${text}|${empty}`;
+  const cached = bikeIcons.get(key);
+  if (cached) return cached;
+  const icon = L.divIcon({
+    className: "bici-icona",
+    iconSize: [28, 28],
+    iconAnchor: [14, 14],
+    html: `<div class="bici${empty ? " bici-vuota" : ""}"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5.5 17.5a3.5 3.5 0 1 0 0-.01M18.5 17.5a3.5 3.5 0 1 0 0-.01M5.5 17.5 9 10h6l3.5 7.5M9 10 7.5 6.5H6M15 10l-3 7.5h-6.5M13 6.5h2.5L15 10"/></svg>${text ? `<b>${text}</b>` : ""}</div>`,
+  });
+  bikeIcons.set(key, icon);
+  return icon;
 }
 
 function Centra({ centro }: { centro: [number, number] | null }) {
@@ -204,6 +226,31 @@ export default function Mappa(p: Props) {
             </CircleMarker>
           );
         })}
+
+      {(p.bikeStations ?? []).map((s) => (
+        <Marker
+          key={`bici-${s.system_id}/${s.id}`}
+          position={[s.lat, s.lon]}
+          icon={bikeIcon(s)}
+          zIndexOffset={-100}
+          alt={`Bike sharing ${s.system}: ${s.name}, ${availabilityText(s)}`}
+        >
+          <Popup>
+            <strong>{s.name}</strong>
+            <br />
+            <span className="small">Bike sharing {s.system}</span>
+            <br />
+            {availabilityText(s)}
+            {s.live && s.age_s != null && s.age_s > 120 ? <><br /><em className="small">dato di {Math.round(s.age_s / 60)} min fa</em></> : null}
+            {s.app_url && (
+              <>
+                <br />
+                <a href={s.app_url} target="_blank" rel="noopener noreferrer">Noleggia con l'app del gestore</a>
+              </>
+            )}
+          </Popup>
+        </Marker>
+      ))}
 
       {p.itinerario && <PercorsoItinerario it={p.itinerario} />}
 

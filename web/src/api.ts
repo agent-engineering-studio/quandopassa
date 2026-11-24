@@ -93,7 +93,35 @@ export interface Info {
   biglietti: { url: string | null; nome: string | null; info: string };
   alerts: ServiceAlert[];
   header: AppHeader;
-  bike_sharing?: { id: string; name: string; operator: string; app_url: string | null; live: boolean }[];
+  bike_sharing?: BikeSystem[];
+}
+
+/** Sistema di bike sharing (es. Glor di VAIMOO): il noleggio si fa nell'app del gestore. */
+export interface BikeSystem {
+  id: string;
+  name: string;
+  operator: string;
+  app_url: string | null;
+  live: boolean;
+}
+
+/** Stazione di bike sharing; bikes e docks ci sono solo se il gestore pubblica la disponibilità. */
+export interface BikeStation {
+  id: string;
+  system_id: string;
+  system: string;
+  name: string;
+  address?: string;
+  lat: number;
+  lon: number;
+  capacity: number | null;
+  app_url: string | null;
+  live: boolean;
+  bikes: number | null;
+  docks: number | null;
+  renting?: boolean;
+  returning?: boolean;
+  age_s?: number | null;
 }
 
 /** Intestazione dell'app, configurabile dal backoffice. */
@@ -237,6 +265,7 @@ export const api = {
     richiesta<RispostaItinerari>(
       `/itinerari?${q({ da_lat: da.lat, da_lon: da.lon, a_lat: a.lat, a_lon: a.lon, da_nome: da.nome, a_nome: a.nome })}`,
     ),
+  bikeStations: () => richiesta<{ systems: BikeSystem[]; stations: BikeStation[] }>("/bikes/stations"),
   assistente: (testo: string, lat?: number, lon?: number, ora?: string) =>
     richiesta<RispostaAssistente>(`/assistente?${q({ testo, lat, lon, ora })}`),
 };
