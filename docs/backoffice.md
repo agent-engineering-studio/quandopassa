@@ -70,6 +70,28 @@ flowchart LR
 Gli avvisi compaiono una settimana prima dell'inizio (come "programmati") e spariscono da soli alla fine. Sono
 anche nell'API pubblica `GET /api/v1/alerts`, utile per siti e servizi dell'ente.
 
+### Il bike sharing
+
+La pagina **Bike sharing** affianca alle fermate del bus le stazioni di bici condivise (per esempio Glor di
+VAIMOO, dove il Comune ha un accordo con il gestore).
+
+- **Sistema**: nome mostrato ai cittadini, gestore, link all'app per il noleggio (QuandoPassa non gestisce
+  noleggi né pagamenti), indirizzi del feed e licenza dei dati.
+- **Import da GBFS** ([General Bikeshare Feed Specification](https://gbfs.org), v2.x e v3.0): dall'indirizzo
+  `gbfs.json` del gestore, da `station_information.json` o da un file caricato (JSON o zip con i file del feed).
+  Prima si vede l'**anteprima** (stazioni nuove, aggiornate, invariate, non più nel feed), poi si conferma.
+  Le stazioni inserite o modificate a mano non vengono mai sovrascritte né rimosse dagli import successivi.
+- **Stazioni** sulla mappa insieme alle fermate del bus: si spostano trascinandole, si aggiungono, si
+  disattivano. Per ogni stazione il backoffice indica le fermate del bus entro 300 m.
+- **Disponibilità in tempo reale**: se il gestore pubblica `station_status`, il server la legge con una cache
+  che rispetta il `ttl` del feed (da 30 a 300 secondi). La posizione di chi usa l'app non arriva mai al gestore.
+  Se il gestore non risponde le stazioni restano visibili senza i numeri. «Verifica disponibilità» prova il
+  collegamento.
+
+Le stazioni pubblicate sono in `bike_sharing.json` accanto al feed GTFS (non fanno parte del GTFS) e nelle API
+pubbliche `GET /api/v1/bikes/stations` e `GET /api/v1/bikes/nearby?lat&lon`; la scheda di una fermata
+(`/api/v1/fermate/{id}`) elenca le stazioni vicine in `bikes_nearby`.
+
 ## Accesso
 
 Il backoffice è **sempre attivo**. Utente e password stanno nel file di configurazione `.env`:

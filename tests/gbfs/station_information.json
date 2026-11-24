@@ -1,0 +1,14 @@
+{
+  "last_updated": 1794384000,
+  "ttl": 3600,
+  "version": "2.3",
+  "data": {
+    "stations": [
+      {"station_id": "101", "name": "Piazza Plebiscito", "short_name": "PLB", "lat": 40.7989, "lon": 16.9216,
+       "address": "Piazza Plebiscito", "capacity": 10},
+      {"station_id": "102", "name": "Parcheggio Lagomagno", "lat": 40.7943, "lon": 16.9157, "capacity": 8},
+      {"station_id": "103", "name": "Stazione FS", "lat": 40.8050, "lon": 16.9300, "capacity": 12},
+      {"station_id": "104", "name": "Senza coordinate"}
+    ]
+  }
+}

@@ -12,6 +12,12 @@ export default function Dashboard() {
     { label: "Fermate", value: f.stops, note: f.provisional_stops ? `${f.provisional_stops} senza posizione` : "tutte sulla mappa", href: "#/fermate" },
     { label: "Linee", value: f.routes, note: `${f.trips} corse programmate`, href: "#/linee" },
     { label: "Avvisi in corso o in arrivo", value: status.alerts_active, note: "visibili ai cittadini", href: "#/avvisi" },
+    {
+      label: "Stazioni bike sharing",
+      value: status.bikes?.stations ?? 0,
+      note: status.bikes?.systems ? `${status.bikes.systems} ${status.bikes.systems === 1 ? "sistema" : "sistemi"}` : "nessun sistema configurato",
+      href: "#/bike-sharing",
+    },
   ];
   return (
     <>
@@ -25,7 +31,7 @@ export default function Dashboard() {
       )}
       <div className="row g-3 mb-4">
         {tiles.map((t) => (
-          <div className="col-12 col-md-4" key={t.label}>
+          <div className="col-12 col-md-6 col-xl-3" key={t.label}>
             <a className="card card-bg shadow-sm h-100 text-decoration-none" href={t.href}>
               <div className="card-body">
                 <p className="small text-muted mb-1">{t.label}</p>

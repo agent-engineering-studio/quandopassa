@@ -110,7 +110,41 @@ MIGRATIONS: list[str] = [
     );
     CREATE INDEX audit_log_at ON audit_log (at DESC);
     """,
+    # ------------------------------------------------------------------ 2: bike sharing (sistemi e stazioni)
+    """
+    CREATE TABLE bike_systems (
+        system_id   text PRIMARY KEY,
+        name        text NOT NULL,
+        operator    text NOT NULL DEFAULT '',
+        app_url     text NOT NULL DEFAULT '',
+        gbfs_url    text NOT NULL DEFAULT '',
+        status_url  text NOT NULL DEFAULT '',
+        license_url text NOT NULL DEFAULT '',
+        live        boolean NOT NULL DEFAULT true,
+        last_import jsonb,
+        updated_at  timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE TABLE bike_stations (
+        system_id  text NOT NULL REFERENCES bike_systems ON UPDATE CASCADE ON DELETE CASCADE,
+        station_id text NOT NULL,
+        name       text NOT NULL,
+        short_name text NOT NULL DEFAULT '',
+        address    text NOT NULL DEFAULT '',
+        lat        double precision NOT NULL CHECK (lat BETWEEN -90 AND 90),
+        lon        double precision NOT NULL CHECK (lon BETWEEN -180 AND 180),
+        capacity   integer CHECK (capacity IS NULL OR capacity >= 0),
+        active     boolean NOT NULL DEFAULT true,
+        note       text NOT NULL DEFAULT '',
+        source     text NOT NULL DEFAULT 'manuale' CHECK (source IN ('manuale', 'gbfs')),
+        updated_at timestamptz NOT NULL DEFAULT now(),
+        PRIMARY KEY (system_id, station_id)
+    );
+    """,
 ]
+
+BIKE_SYSTEM_FIELDS = ("system_id", "name", "operator", "app_url", "gbfs_url", "status_url", "license_url", "live")
+BIKE_STATION_FIELDS = ("station_id", "name", "short_name", "address", "lat", "lon", "capacity", "active", "note",
+                       "source")
 
 # blocco consultivo: una sola rigenerazione del feed per volta, anche con più processi
 FEED_LOCK = 72_710_001
@@ -379,6 +413,86 @@ class Database:
             else:
                 conn.execute("INSERT INTO settings (key, value) VALUES (%s, %s) ON CONFLICT (key) DO UPDATE "
                              "SET value = excluded.value, updated_at = now()", (key, value))
+
+    # ================================================================= bike sharing
+    @staticmethod
+    def bike_snapshot(conn) -> dict:
+        systems = conn.execute("SELECT * FROM bike_systems ORDER BY name, system_id").fetchall()
+        stations = conn.execute("SELECT * FROM bike_stations ORDER BY system_id, name, station_id").fetchall()
+        return {"systems": systems, "stations": stations}
+
+    def bike_public(self, conn) -> dict:
+        """Quello che l'app pubblica deve sapere (bike_sharing.json): niente note interne né esiti degli import."""
+        snap = self.bike_snapshot(conn)
+        systems = [{k: s[k] for k in BIKE_SYSTEM_FIELDS if k != "gbfs_url"} for s in snap["systems"]]
+        stations = [{"system_id": s["system_id"], **{k: s[k] for k in BIKE_STATION_FIELDS if k not in ("note", "source")}}
+                    for s in snap["stations"] if s["active"]]
+        return {"systems": systems, "stations": stations}
+
+    @staticmethod
+    def save_bike_system(conn, old_id: str | None, s: dict) -> None:
+        values = tuple(s.get(k, "" if k != "live" else True) for k in BIKE_SYSTEM_FIELDS)
+        if old_id is None:
+            conn.execute(f"INSERT INTO bike_systems ({', '.join(BIKE_SYSTEM_FIELDS)}) "
+                         f"VALUES ({', '.join(['%s'] * len(values))})", values)
+            return
+        sets = ", ".join(f"{k}=%s" for k in BIKE_SYSTEM_FIELDS)
+        if conn.execute(f"UPDATE bike_systems SET {sets}, updated_at=now() WHERE system_id=%s",
+                        (*values, old_id)).rowcount == 0:
+            raise KeyError(old_id)
+
+    @staticmethod
+    def update_bike_system(conn, system_id: str, values: dict) -> None:
+        """Aggiorna solo alcuni campi del sistema (dopo un import: indirizzi del feed, esito)."""
+        if not values:
+            return
+        sets = ", ".join(f"{k}=%s" for k in values)
+        params = [Jsonb(v) if k == "last_import" else v for k, v in values.items()]
+        if conn.execute(f"UPDATE bike_systems SET {sets}, updated_at=now() WHERE system_id=%s",
+                        (*params, system_id)).rowcount == 0:
+            raise KeyError(system_id)
+
+    @staticmethod
+    def delete_bike_system(conn, system_id: str) -> None:
+        if conn.execute("DELETE FROM bike_systems WHERE system_id=%s", (system_id,)).rowcount == 0:
+            raise KeyError(system_id)
+
+    @staticmethod
+    def bike_stations(conn, system_id: str) -> list[dict]:
+        if not conn.execute("SELECT 1 FROM bike_systems WHERE system_id=%s", (system_id,)).fetchone():
+            raise KeyError(system_id)
+        return conn.execute("SELECT * FROM bike_stations WHERE system_id=%s", (system_id,)).fetchall()
+
+    @staticmethod
+    def save_bike_station(conn, system_id: str, old_id: str | None, s: dict) -> None:
+        values = tuple(s.get(k) for k in BIKE_STATION_FIELDS)
+        if old_id is None:
+            conn.execute(f"INSERT INTO bike_stations (system_id, {', '.join(BIKE_STATION_FIELDS)}) "
+                         f"VALUES ({', '.join(['%s'] * (len(values) + 1))})", (system_id, *values))
+            return
+        sets = ", ".join(f"{k}=%s" for k in BIKE_STATION_FIELDS)
+        if conn.execute(f"UPDATE bike_stations SET {sets}, updated_at=now() WHERE system_id=%s AND station_id=%s",
+                        (*values, system_id, old_id)).rowcount == 0:
+            raise KeyError(f"{system_id}/{old_id}")
+
+    @staticmethod
+    def delete_bike_station(conn, system_id: str, station_id: str) -> None:
+        if conn.execute("DELETE FROM bike_stations WHERE system_id=%s AND station_id=%s",
+                        (system_id, station_id)).rowcount == 0:
+            raise KeyError(f"{system_id}/{station_id}")
+
+    def apply_bike_import(self, conn, system_id: str, plan: dict) -> None:
+        """Applica un piano di bikes.plan_import: nuove e aggiornate con source «gbfs», rimosse quelle sparite."""
+        for s in plan["added"]:
+            self.save_bike_station(conn, system_id, None, {**s, "active": True, "note": "", "source": "gbfs"})
+        for s in plan["updated"]:
+            conn.execute("UPDATE bike_stations SET name=%s, short_name=%s, address=%s, lat=%s, lon=%s, capacity=%s, "
+                         "active=true, updated_at=now() WHERE system_id=%s AND station_id=%s AND source='gbfs'",
+                         (s["name"], s["short_name"], s["address"], s["lat"], s["lon"], s["capacity"], system_id,
+                          s["station_id"]))
+        if plan["removed"]:
+            conn.execute("DELETE FROM bike_stations WHERE system_id=%s AND source='gbfs' AND station_id = ANY(%s)",
+                         (system_id, list(plan["removed"])))
 
     # ================================================================= registro
     @staticmethod

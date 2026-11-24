@@ -93,6 +93,7 @@ export interface Info {
   biglietti: { url: string | null; nome: string | null; info: string };
   alerts: ServiceAlert[];
   header: AppHeader;
+  bike_sharing?: { id: string; name: string; operator: string; app_url: string | null; live: boolean }[];
 }
 
 /** Intestazione dell'app, configurabile dal backoffice. */

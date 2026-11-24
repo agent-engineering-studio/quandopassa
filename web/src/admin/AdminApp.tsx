@@ -5,6 +5,7 @@ import Icona, { IconaBus } from "../Icona";
 import { admin, ApiError, setCsrf, type Snapshot, type Status } from "./api";
 import Alerts from "./pages/Alerts";
 import Audit from "./pages/Audit";
+import Bikes from "./pages/Bikes";
 import Calendars from "./pages/Calendars";
 import Dashboard from "./pages/Dashboard";
 import Feed from "./pages/Feed";
@@ -19,6 +20,7 @@ const PAGES = [
   { hash: "fermate", label: "Fermate", icon: "it-map-marker", component: Stops },
   { hash: "linee", label: "Linee e orari", icon: "it-list", component: Lines },
   { hash: "calendari", label: "Calendari", icon: "it-calendar", component: Calendars },
+  { hash: "bike-sharing", label: "Bike sharing", icon: "it-map-marker-circle", component: Bikes },
   { hash: "feed", label: "Feed GTFS", icon: "it-file", component: Feed },
   { hash: "impostazioni", label: "Impostazioni", icon: "it-settings", component: Settings },
   { hash: "registro", label: "Registro", icon: "it-clock", component: Audit },

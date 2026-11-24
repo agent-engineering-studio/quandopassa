@@ -1,0 +1,16 @@
+{
+  "last_updated": 1794384000,
+  "ttl": 3600,
+  "version": "2.3",
+  "data": {
+    "system_id": "bici_gioia",
+    "language": "it",
+    "name": "Bici Gioia (esempio)",
+    "operator": "Gestore di esempio",
+    "timezone": "Europe/Rome",
+    "license_url": "https://creativecommons.org/licenses/by/4.0/",
+    "rental_apps": {
+      "android": {"store_uri": "https://play.google.com/store/apps/details?id=org.example.bici", "discovery_uri": "bici://"}
+    }
+  }
+}

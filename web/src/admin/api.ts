@@ -120,6 +120,91 @@ export interface AuditEntry {
   details: Record<string, unknown> | null;
 }
 
+export interface BikeSystem {
+  system_id: string;
+  name: string;
+  operator: string;
+  app_url: string;
+  gbfs_url: string;
+  status_url: string;
+  license_url: string;
+  live: boolean;
+  last_import?: BikeImportLog | null;
+  stations?: number;
+  updated_at?: string;
+}
+
+export interface BikeImportLog {
+  at: string;
+  by: string;
+  origin: string;
+  stations: number;
+  added: number;
+  updated: number;
+  removed: number;
+  kept_manual: number;
+  missing: number;
+  warnings: string[];
+}
+
+export interface NearbyStop {
+  stop_id: string;
+  stop_code: string;
+  name: string;
+  meters: number;
+}
+
+export interface BikeStation {
+  system_id?: string;
+  station_id: string;
+  name: string;
+  short_name: string;
+  address: string;
+  lat: number | null;
+  lon: number | null;
+  capacity: number | null;
+  active: boolean;
+  note: string;
+  source?: "manuale" | "gbfs";
+  nearby_stops?: NearbyStop[];
+  updated_at?: string;
+}
+
+export interface BikesData {
+  systems: BikeSystem[];
+  stations: BikeStation[];
+}
+
+/** Esito di un import GBFS: elenchi di station_id (in anteprima o applicati). */
+export interface BikeImportPlan {
+  added: string[];
+  updated: string[];
+  unchanged: number;
+  kept_manual: string[];
+  removed: string[];
+  missing: string[];
+}
+
+export interface BikeImportPreview {
+  ok: boolean;
+  dry_run: true;
+  plan: BikeImportPlan;
+  warnings: string[];
+  system_information: Record<string, string>;
+  status_url: string;
+}
+
+export interface BikeLiveCheck {
+  ok: boolean;
+  ttl: number;
+  stations_in_feed: number;
+  matched: number;
+  unknown: string[];
+  without_status: string[];
+  bikes: number;
+  docks: number;
+}
+
 export interface Status {
   feed: {
     version: string;
@@ -133,6 +218,7 @@ export interface Status {
   generated_at: string | null;
   warnings: string[];
   alerts_active: number;
+  bikes: { systems: number; stations: number };
   osrm: boolean;
   database: boolean;
 }
@@ -242,6 +328,30 @@ export const admin = {
       ? request<MutationResult<number>>("PUT", `/alerts/${alertId}`, alert)
       : request<MutationResult<number>>("POST", "/alerts", alert),
   deleteAlert: (alertId: number) => request<MutationResult>("DELETE", `/alerts/${alertId}`),
+
+  bikes: () => request<BikesData>("GET", "/bikes"),
+  saveBikeSystem: (originalId: string | null, system: BikeSystem) =>
+    originalId
+      ? request<MutationResult>("PUT", `/bikes/systems/${id(originalId)}`, system)
+      : request<MutationResult>("POST", "/bikes/systems", system),
+  deleteBikeSystem: (systemId: string) => request<MutationResult>("DELETE", `/bikes/systems/${id(systemId)}`),
+  saveBikeStation: (systemId: string, originalId: string | null, station: BikeStation) =>
+    originalId
+      ? request<MutationResult>("PUT", `/bikes/systems/${id(systemId)}/stations/${id(originalId)}`, station)
+      : request<MutationResult>("POST", `/bikes/systems/${id(systemId)}/stations`, station),
+  deleteBikeStation: (systemId: string, stationId: string) =>
+    request<MutationResult>("DELETE", `/bikes/systems/${id(systemId)}/stations/${id(stationId)}`),
+  previewBikeImport: (systemId: string, source: File | string, removeMissing: boolean) =>
+    typeof source === "string"
+      ? request<BikeImportPreview>("POST", `/bikes/systems/${id(systemId)}/import/url`, {
+          url: source, remove_missing: removeMissing, dry_run: true })
+      : request<BikeImportPreview>("POST", `/bikes/systems/${id(systemId)}/import/file?remove_missing=${removeMissing}&dry_run=true`, undefined, source),
+  importBikes: (systemId: string, source: File | string, removeMissing: boolean) =>
+    typeof source === "string"
+      ? request<MutationResult<BikeImportPlan>>("POST", `/bikes/systems/${id(systemId)}/import/url`, {
+          url: source, remove_missing: removeMissing, dry_run: false })
+      : request<MutationResult<BikeImportPlan>>("POST", `/bikes/systems/${id(systemId)}/import/file?remove_missing=${removeMissing}&dry_run=false`, undefined, source),
+  checkBikeStatus: (systemId: string) => request<BikeLiveCheck>("GET", `/bikes/systems/${id(systemId)}/live`),
 
   settings: () => request<SettingsResponse>("GET", "/settings"),
   saveSettings: (values: Record<string, string | null>) => request<MutationResult>("PUT", "/settings", values),
