@@ -237,3 +237,83 @@ def test_impostazioni_e_logo(admin):
     assert admin.put("/api/admin/logo", content=svg).status_code == 415
     assert admin.delete("/api/admin/logo").status_code == 200
     assert admin.get("/api/v1/info").json()["header"]["logo_url"] is None
+
+
+# ===================================================================== bike sharing
+def _gbfs_zip() -> bytes:
+    from test_bikes import FEED
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as z:
+        for f in FEED.glob("*.json"):
+            z.write(f, f.name)
+    return buf.getvalue()
+
+
+def test_bike_sharing_import_e_pubblicazione(admin, monkeypatch):
+    from quandopassa import admin as admin_module
+    from test_bikes import mock_client
+
+    assert admin.post("/api/admin/bikes/systems", json={"system_id": "bici", "name": "Bici Gioia"}).status_code == 200
+    # anteprima: nessuna modifica
+    r = admin.post("/api/admin/bikes/systems/bici/import/file", content=_gbfs_zip())
+    assert r.status_code == 200, r.text
+    preview = r.json()
+    assert preview["dry_run"] and preview["plan"]["added"] == ["101", "102", "103"] and preview["warnings"]
+    assert preview["status_url"].endswith("station_status.json")
+    assert admin.get("/api/v1/bikes/stations").json()["stations"] == []
+    # import vero: stazioni pubblicate, indirizzi e app presi dal feed
+    r = admin.post("/api/admin/bikes/systems/bici/import/file?dry_run=false", content=_gbfs_zip())
+    assert r.status_code == 200, r.text
+    data = admin.get("/api/admin/bikes").json()
+    system = data["systems"][0]
+    assert system["stations"] == 3 and system["status_url"].endswith("station_status.json")
+    assert system["app_url"].startswith("https://play.google.com") and system["last_import"]["added"] == 3
+    plebiscito = next(s for s in data["stations"] if s["station_id"] == "101")
+    assert plebiscito["source"] == "gbfs" and plebiscito["nearby_stops"][0]["stop_id"] == "R02"
+    admin.app.state.app_state.bike_status.client = mock_client()
+    pub = admin.get("/api/v1/bikes/stations").json()
+    assert len(pub["stations"]) == 3 and next(s for s in pub["stations"] if s["id"] == "101")["bikes"] == 4
+    assert admin.get("/api/admin/status").json()["bikes"] == {"systems": 1, "stations": 3}
+    assert admin.get("/api/admin/audit").json()[0]["action"] == "import GBFS"
+
+    # l'ufficio sposta una stazione: il re-import non la sovrascrive
+    station = {k: plebiscito[k] for k in ("station_id", "name", "short_name", "address", "lat", "lon", "capacity")}
+    r = admin.put("/api/admin/bikes/systems/bici/stations/101", json={**station, "lat": 40.79895})
+    assert r.status_code == 200, r.text
+    r = admin.post("/api/admin/bikes/systems/bici/import/file", content=_gbfs_zip())
+    assert r.json()["plan"]["kept_manual"] == ["101"]
+
+    # stazione aggiunta a mano e disattivata: non compare nell'app
+    r = admin.post("/api/admin/bikes/systems/bici/stations", json={
+        "station_id": "M1", "name": "Villa comunale", "lat": 40.801, "lon": 16.925, "active": False})
+    assert r.status_code == 200, r.text
+    assert "M1" not in {s["id"] for s in admin.get("/api/v1/bikes/stations").json()["stations"]}
+
+    # verifica della disponibilità dal backoffice
+    monkeypatch.setattr(admin_module, "http_client", lambda timeout=8: mock_client())
+    live = admin.get("/api/admin/bikes/systems/bici/live").json()
+    assert live["matched"] == 2 and live["bikes"] == 4 and "M1" in live["without_status"]
+
+    z = zipfile.ZipFile(io.BytesIO(admin.get("/api/admin/export.zip?sources=true").content))
+    assert "sorgenti/bike_sharing.json" in z.namelist()
+    assert admin.delete("/api/admin/bikes/systems/bici").status_code == 200
+    assert admin.get("/api/v1/bikes/stations").json() == {"systems": [], "stations": []}
+
+
+def test_bike_sharing_import_da_url_e_errori(admin, monkeypatch):
+    from quandopassa import bikes
+    from test_bikes import BASE, mock_client
+
+    monkeypatch.setattr(bikes, "http_client", lambda timeout=10: mock_client())
+    assert admin.post("/api/admin/bikes/systems", json={"system_id": "bici", "name": "Bici"}).status_code == 200
+    r = admin.post("/api/admin/bikes/systems/bici/import/url",
+                   json={"url": BASE + "gbfs.json", "dry_run": False})
+    assert r.status_code == 200, r.text
+    assert admin.get("/api/admin/bikes").json()["systems"][0]["gbfs_url"] == BASE + "gbfs.json"
+    assert admin.post("/api/admin/bikes/systems/nessuno/import/file", content=_gbfs_zip()).status_code == 404
+    assert admin.post("/api/admin/bikes/systems/bici/import/file", content=b"{}").status_code == 422
+    assert admin.post("/api/admin/bikes/systems", json={"system_id": "x", "name": "X",
+                                                        "app_url": "javascript:alert(1)"}).status_code == 422
+    r = admin.post("/api/admin/bikes/systems/bici/stations", json={"station_id": "a/b", "name": "X", "lat": 1, "lon": 1})
+    assert r.status_code == 422

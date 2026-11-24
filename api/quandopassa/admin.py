@@ -3,7 +3,7 @@
 Accesso con l'utente del .env (ADMIN_USER, ADMIN_PASSWORD_HASH): sessione in un cookie firmato HttpOnly,
 SameSite=Strict, con token CSRF nell'intestazione X-CSRF-Token per ogni modifica e blocco dopo troppi tentativi.
 
-Ogni modifica (fermate, linee, orari, calendari, dati del feed, avvisi, impostazioni) avviene in una transazione
+Ogni modifica (fermate, linee, orari, calendari, dati del feed, avvisi, bike sharing, impostazioni) avviene in una transazione
 Postgres che, prima del commit, rigenera e verifica il feed GTFS in una cartella temporanea. Se il feed ha errori
 la modifica viene annullata; altrimenti la cartella sostituisce quella pubblicata e l'app la ricarica subito:
 la mappa dei cittadini mostra la modifica alla richiesta successiva.
@@ -34,6 +34,9 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, Res
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from .alerts import ALERTS_FILE, Alert, AlertBoard, apply_suspensions
+from .bikes import (BIKES_FILE, BikeBoard, GbfsError, feed_urls, fetch_feed, fetch_json, http_client, nearby_stops,
+                    parse_station_information, parse_station_status, parse_system_information, plan_import,
+                    plan_summary, read_upload, ttl_of)
 from .config import EDITABLE_SETTINGS
 from .db import FEED_LOCK, Database
 from .gtfs import Orario
@@ -49,6 +52,8 @@ FAILURE_WINDOW = 15 * 60
 ID_PATTERN = r"^[A-Za-z0-9_.\-]{1,40}$"
 TIME_PATTERN = r"^([0-4]?[0-9]):([0-5][0-9])$"
 COLOR_PATTERN = r"^[0-9A-Fa-f]{6}$"
+BIKE_STATION_PATTERN = r"^[^\s/]{1,64}$"   # gli id GBFS sono testo libero (numeri, UUID...)
+URL_PATTERN = r"^(https?://[^\s<>\"]+)?$"
 
 
 # ===================================================================== modelli delle richieste
@@ -174,6 +179,35 @@ class AlertBody(BaseModel):
         return self
 
 
+class BikeSystemBody(BaseModel):
+    system_id: str = Field(pattern=ID_PATTERN)
+    name: str = Field(min_length=1, max_length=120)
+    operator: str = Field("", max_length=120)
+    app_url: str = Field("", max_length=300, pattern=URL_PATTERN)
+    gbfs_url: str = Field("", max_length=500, pattern=URL_PATTERN)
+    status_url: str = Field("", max_length=500, pattern=URL_PATTERN)
+    license_url: str = Field("", max_length=300, pattern=URL_PATTERN)
+    live: bool = True
+
+
+class BikeStationBody(BaseModel):
+    station_id: str = Field(pattern=BIKE_STATION_PATTERN)
+    name: str = Field(min_length=1, max_length=150)
+    short_name: str = Field("", max_length=40)
+    address: str = Field("", max_length=200)
+    lat: float = Field(ge=-90, le=90)
+    lon: float = Field(ge=-180, le=180)
+    capacity: int | None = Field(None, ge=0, le=10000)
+    active: bool = True
+    note: str = Field("", max_length=500)
+
+
+class BikeImportUrlBody(BaseModel):
+    url: str = Field(min_length=10, max_length=500, pattern=r"^https?://[^\s<>\"]+$")
+    remove_missing: bool = False
+    dry_run: bool = True
+
+
 # ===================================================================== sessione
 class SessionSigner:
     """Token di sessione firmato con HMAC: utente, scadenza, token CSRF, impronta della password.
@@ -282,6 +316,9 @@ class FeedPublisher:
             write_atomic(folder / ALERTS_FILE, json.dumps([a.json() for a in alerts], ensure_ascii=False, indent=1))
             Orario(folder, str(tz))   # il feed deve caricarsi prima di sostituire quello pubblicato
             AlertBoard.load(folder, tz)
+            write_atomic(folder / BIKES_FILE, json.dumps(self.db.bike_public(conn), ensure_ascii=False, indent=1,
+                                                         default=str))
+            BikeBoard.load(folder)
         except InvalidSources as e:
             shutil.rmtree(folder, ignore_errors=True)
             raise InvalidData([str(e)], warnings) from None
@@ -525,6 +562,7 @@ def create_admin_router(state) -> APIRouter:
                          "trips": info["corse"], "agency": info["agenzia"]},
                 "generated_at": publisher.generated_at, "warnings": publisher.last_warnings,
                 "alerts_active": len(state.alerts.visible(state.clock.adesso())),
+                "bikes": {"systems": len(state.bikes.systems), "stations": len(state.bikes.stations)},
                 "osrm": bool(cfg.osrm_url), "database": ready["ok"]}
 
     @router.get("/data")
@@ -678,6 +716,145 @@ def create_admin_router(state) -> APIRouter:
     def delete_alert(alert_id: int, user: str = Depends(editor)):
         return apply(user, "elimina avviso", str(alert_id), lambda c: db.delete_alert(c, alert_id))
 
+    # ------------------------------------------------------------------ bike sharing
+    @router.get("/bikes")
+    def list_bikes(user: str = Depends(reader)):
+        """Sistemi e stazioni, ognuna con le fermate del bus vicine (dove bus e bici si incontrano)."""
+        with db.connect() as conn:
+            snap = db.bike_snapshot(conn)
+            stops = conn.execute("SELECT stop_id, stop_code, stop_name, lat, lon FROM stops").fetchall()
+        counts: dict[str, int] = {}
+        for s in snap["stations"]:
+            s["nearby_stops"] = nearby_stops(s["lat"], s["lon"], stops)
+            counts[s["system_id"]] = counts.get(s["system_id"], 0) + 1
+        for system in snap["systems"]:
+            system["stations"] = counts.get(system["system_id"], 0)
+        return snap
+
+    @router.post("/bikes/systems")
+    def create_bike_system(body: BikeSystemBody, user: str = Depends(editor)):
+        return apply(user, "nuovo sistema bike sharing", body.system_id,
+                     lambda c: db.save_bike_system(c, None, body.model_dump()), body.model_dump())
+
+    @router.put("/bikes/systems/{system_id}")
+    def update_bike_system(system_id: str, body: BikeSystemBody, user: str = Depends(editor)):
+        return apply(user, "modifica sistema bike sharing", system_id,
+                     lambda c: db.save_bike_system(c, system_id, body.model_dump()), body.model_dump())
+
+    @router.delete("/bikes/systems/{system_id}")
+    def delete_bike_system(system_id: str, user: str = Depends(editor)):
+        return apply(user, "elimina sistema bike sharing", system_id, lambda c: db.delete_bike_system(c, system_id))
+
+    def station_dict(body: BikeStationBody) -> dict:
+        # salvata dall'ufficio: i prossimi import dal feed non la sovrascrivono
+        return {**body.model_dump(), "source": "manuale"}
+
+    @router.post("/bikes/systems/{system_id}/stations")
+    def create_bike_station(system_id: str, body: BikeStationBody, user: str = Depends(editor)):
+        return apply(user, "nuova stazione bike sharing", f"{system_id}/{body.station_id}",
+                     lambda c: db.save_bike_station(c, system_id, None, station_dict(body)), body.model_dump())
+
+    @router.put("/bikes/systems/{system_id}/stations/{station_id}")
+    def update_bike_station(system_id: str, station_id: str, body: BikeStationBody, user: str = Depends(editor)):
+        return apply(user, "modifica stazione bike sharing", f"{system_id}/{station_id}",
+                     lambda c: db.save_bike_station(c, system_id, station_id, station_dict(body)), body.model_dump())
+
+    @router.delete("/bikes/systems/{system_id}/stations/{station_id}")
+    def delete_bike_station(system_id: str, station_id: str, user: str = Depends(editor)):
+        return apply(user, "elimina stazione bike sharing", f"{system_id}/{station_id}",
+                     lambda c: db.delete_bike_station(c, system_id, station_id))
+
+    def import_gbfs(user: str, system_id: str, docs: dict, urls: dict, origin: str, remove_missing: bool,
+                    dry_run: bool):
+        """Anteprima (dry_run) o import delle stazioni di un feed GBFS in un sistema."""
+        if "station_information" not in docs:
+            raise HTTPException(422, "Manca station_information: è il file con l'elenco delle stazioni")
+        try:
+            incoming, warnings = parse_station_information(docs["station_information"])
+            info = parse_system_information(docs["system_information"]) if "system_information" in docs else {}
+            if "gbfs" in docs and "station_status" not in urls:
+                urls = {**feed_urls(docs["gbfs"]), **urls}
+        except GbfsError as e:
+            raise HTTPException(422, f"Feed GBFS non valido: {e}") from None
+        if not incoming:
+            raise HTTPException(422, {"message": "Il feed non contiene stazioni valide", "errors": warnings,
+                                      "warnings": []})
+        if dry_run:
+            with db.connect() as conn:
+                try:
+                    existing = db.bike_stations(conn, system_id)
+                except KeyError:
+                    raise HTTPException(404, f"Sistema {system_id} non trovato") from None
+            return {"ok": True, "dry_run": True, "plan": plan_summary(plan_import(existing, incoming, remove_missing)),
+                    "warnings": warnings, "system_information": info, "status_url": urls.get("station_status", "")}
+
+        def change(conn):
+            plan = plan_import(db.bike_stations(conn, system_id), incoming, remove_missing)
+            db.apply_bike_import(conn, system_id, plan)
+            summary = plan_summary(plan)
+            current = conn.execute("SELECT * FROM bike_systems WHERE system_id=%s", (system_id,)).fetchone()
+            updates: dict = {"last_import": {
+                "at": datetime.now().astimezone().isoformat(timespec="seconds"), "by": user, "origin": origin,
+                "stations": len(incoming), "added": len(summary["added"]), "updated": len(summary["updated"]),
+                "removed": len(summary["removed"]), "kept_manual": len(summary["kept_manual"]),
+                "missing": len(summary["missing"]), "warnings": warnings[:20]}}
+            if origin.startswith("http"):   # l'indirizzo usato (gbfs.json o station_information) per i prossimi import
+                updates["gbfs_url"] = origin
+            if urls.get("station_status") and not current["status_url"]:
+                updates["status_url"] = urls["station_status"]
+            for key in ("operator", "app_url", "license_url"):   # dal gestore, se l'ufficio non li ha già scritti
+                if info.get(key) and not current[key]:
+                    updates[key] = info[key][:300]
+            db.update_bike_system(conn, system_id, updates)
+            return {**summary, "warnings": warnings}
+
+        return apply(user, "import GBFS", system_id, change,
+                     {"origine": origin, "stazioni": len(incoming), "rimuovi_mancanti": remove_missing})
+
+    @router.post("/bikes/systems/{system_id}/import/url")
+    def import_bikes_url(system_id: str, body: BikeImportUrlBody, user: str = Depends(editor)):
+        try:
+            docs, urls = fetch_feed(body.url)
+        except GbfsError as e:
+            raise HTTPException(502 if "download" in str(e) else 422, f"Feed GBFS non leggibile: {e}") from None
+        return import_gbfs(user, system_id, docs, urls, body.url, body.remove_missing, body.dry_run)
+
+    @router.post("/bikes/systems/{system_id}/import/file")
+    async def import_bikes_file(system_id: str, request: Request, remove_missing: bool = False, dry_run: bool = True,
+                                user: str = Depends(editor)):
+        """File GBFS caricato: un JSON (station_information, ...) o uno zip con i file del feed."""
+        content = await request.body()
+        if not content:
+            raise HTTPException(422, "File vuoto")
+        try:
+            docs = read_upload(content)
+        except GbfsError as e:
+            raise HTTPException(422, f"File GBFS non valido: {e}") from None
+        return import_gbfs(user, system_id, docs, {}, "file caricato", remove_missing, dry_run)
+
+    @router.get("/bikes/systems/{system_id}/live")
+    def check_bike_status(system_id: str, user: str = Depends(reader)):
+        """Prova a leggere ora la disponibilità dal gestore (station_status), senza cache."""
+        with db.connect() as conn:
+            try:
+                stations = {s["station_id"] for s in db.bike_stations(conn, system_id)}
+            except KeyError:
+                raise HTTPException(404, f"Sistema {system_id} non trovato") from None
+            system = conn.execute("SELECT status_url FROM bike_systems WHERE system_id=%s", (system_id,)).fetchone()
+        if not system["status_url"]:
+            raise HTTPException(400, "Indirizzo di station_status non impostato")
+        try:
+            doc = fetch_json(system["status_url"], http_client(timeout=8))
+            status = parse_station_status(doc)
+        except GbfsError as e:
+            raise HTTPException(502, f"Disponibilità non leggibile: {e}") from None
+        matched = [sid for sid in status if sid in stations]
+        return {"ok": True, "ttl": ttl_of(doc), "stations_in_feed": len(status), "matched": len(matched),
+                "unknown": sorted(set(status) - stations)[:20],
+                "without_status": sorted(stations - set(status))[:20],
+                "bikes": sum(status[s]["bikes"] or 0 for s in matched),
+                "docks": sum(status[s]["docks"] or 0 for s in matched)}
+
     # ------------------------------------------------------------------ impostazioni
     @router.get("/settings")
     def get_settings(user: str = Depends(reader)):
@@ -753,7 +930,7 @@ def create_admin_router(state) -> APIRouter:
             for f in sorted(folder.glob("*.txt")):
                 z.write(f, f.name)
             if sources:
-                for name in ("fermate.csv", "percorsi.json", "forme.json", ALERTS_FILE):
+                for name in ("fermate.csv", "percorsi.json", "forme.json", ALERTS_FILE, BIKES_FILE):
                     if (folder / name).exists():
                         z.write(folder / name, f"sorgenti/{name}")
         version = state.timetable.info()["versione_feed"] or "feed"

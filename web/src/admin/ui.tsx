@@ -277,3 +277,13 @@ export function stopIcon(text: string, kind: "normal" | "selected" | "closed" | 
     html: `<span>${text.replace(/[<>&"]/g, "")}</span>`,
   });
 }
+
+/** Indicatore di una stazione di bike sharing (quadrato verde). */
+export function bikeIcon(text: string, kind: "normal" | "selected" | "inactive" = "normal") {
+  return L.divIcon({
+    className: `pin-fermata pin-bike pin-${kind}`,
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
+    html: `<span>${text.slice(0, 4).replace(/[<>&"]/g, "")}</span>`,
+  });
+}

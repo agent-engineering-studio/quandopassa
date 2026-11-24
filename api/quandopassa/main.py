@@ -19,6 +19,8 @@ API pubbliche (JSON, /api/v1):
   GET  /luoghi?q                       fermate, indirizzi e luoghi per scegliere partenza e arrivo
   GET  /assistente?testo&lat&lon       assistente IA
   GET  /alerts?ora                     avvisi di servizio: deviazioni, fermate sospese, servizio sospeso
+  GET  /bikes/stations                 bike sharing: sistemi e stazioni, con bici e stalli liberi se il gestore li dà
+  GET  /bikes/nearby?lat&lon&n         stazioni di bike sharing più vicine con distanza e minuti a piedi
 
 Backoffice (/admin, API /api/admin): attivo con DATI_DIR, ADMIN_UTENTE e ADMIN_PASSWORD_HASH, vedi backoffice.py.
 """
@@ -38,6 +40,7 @@ from fastapi.staticfiles import StaticFiles
 from .ai import ClientIA
 from .assistente import ESEMPI, Assistente, AssistenteNonDisponibile
 from .alerts import AlertBoard
+from .bikes import NEARBY_STOP_METERS, BikeBoard, StatusCache
 from .config import EDITABLE_SETTINGS, Config
 from .gtfs import Orario
 from .itinerari import Pianificatore
@@ -114,6 +117,7 @@ class AppState:
         self.env_config = cfg
         self.ia = ia
         self.feed_dir = feed_folder(cfg)
+        self.bike_status = StatusCache()   # sopravvive ai ricaricamenti: niente richieste in più al gestore
         self.reload()
         self.clock = Orologio(self.timetable.fuso, cfg.demo_ora)
 
@@ -148,12 +152,13 @@ class AppState:
         config = apply_settings(self.env_config, self.saved_settings())
         timetable = Orario(self.feed_dir, config.fuso)
         alerts = AlertBoard.load(self.feed_dir, timetable.fuso)
+        bikes = BikeBoard.load(self.feed_dir, self.bike_status)
         # tutto pronto prima di sostituire: le richieste in corso vedono il vecchio o il nuovo, mai un misto
         planner = Pianificatore(timetable, closed_stops=lambda when, board=alerts: board.closed_stops(when))
         places = Luoghi(timetable, config.geocoder, config.comune.removeprefix("Comune di ").strip())
         assistant = Assistente(config, timetable, self.ia)
-        self.config, self.timetable, self.alerts, self.planner, self.places, self.assistant = (
-            config, timetable, alerts, planner, places, assistant)
+        self.config, self.timetable, self.alerts, self.planner, self.places, self.assistant, self.bikes = (
+            config, timetable, alerts, planner, places, assistant, bikes)
         log.info("feed %s: %s fermate (%s provvisorie), %s corse, %s avvisi", self.feed_dir, len(timetable.fermate),
                  timetable.info()["fermate_provvisorie"], len(timetable.corse), len(alerts.alerts))
 
@@ -214,6 +219,7 @@ def create_app(cfg: Config | None = None, ia: ClientIA | None = None) -> FastAPI
                               "info": s.config.biglietti},
                 "avvisi": _avvisi(s.timetable),
                 "alerts": [a.json(ora) for a in s.alerts.visible(ora)],
+                "bike_sharing": s.bikes.systems_json(),
                 "header": {"title": s.config.app_title, "subtitle": s.config.servizio, "entity_name": s.config.comune,
                            "entity_url": s.config.entity_url or s.timetable.agenzia.get("agency_url", ""),
                            "logo_url": s.logo_url(), "logo_alt": s.config.logo_alt}}
@@ -264,12 +270,24 @@ def create_app(cfg: Config | None = None, ia: ClientIA | None = None) -> FastAPI
         f = fermata_o_404(fid)
         t = istante(ora)
         return {**f.json(), "linee": s.timetable.linee_della_fermata(fid),
-                "partenze": mark_suspended(fid, s.timetable.partenze(fid, t, n=6)), "alerts": stop_alerts(fid, t)}
+                "partenze": mark_suspended(fid, s.timetable.partenze(fid, t, n=6)), "alerts": stop_alerts(fid, t),
+                "bikes_nearby": s.bikes.nearby(f.lat, f.lon, n=3, radius=NEARBY_STOP_METERS)}
 
     @app.get("/api/v1/fermate/{fid}/partenze")
     def partenze(fid: str, n: int = Query(5, ge=1, le=30), ora: str | None = None):
         fermata_o_404(fid)
         return mark_suspended(fid, s.timetable.partenze(fid, istante(ora), n=n))
+
+    # ---------------------------------------------------------- bike sharing
+    @app.get("/api/v1/bikes/stations")
+    def bike_stations():
+        """Stazioni di bike sharing. Bici e stalli liberi sono dati reali del gestore (live=true), se li fornisce."""
+        return {"systems": s.bikes.systems_json(), "stations": s.bikes.all()}
+
+    @app.get("/api/v1/bikes/nearby")
+    def bikes_nearby(lat: float = Query(..., ge=-90, le=90), lon: float = Query(..., ge=-180, le=180),
+                     n: int = Query(5, ge=1, le=20), radius: int = Query(1500, ge=50, le=10000)):
+        return s.bikes.nearby(lat, lon, n=n, radius=radius)
 
     # ---------------------------------------------------------- linee e bus
     @app.get("/api/v1/linee")

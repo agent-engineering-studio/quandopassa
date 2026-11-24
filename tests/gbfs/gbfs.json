@@ -1,0 +1,14 @@
+{
+  "last_updated": 1794384000,
+  "ttl": 60,
+  "version": "2.3",
+  "data": {
+    "it": {
+      "feeds": [
+        {"name": "system_information", "url": "https://gbfs.example.org/gioia/system_information.json"},
+        {"name": "station_information", "url": "https://gbfs.example.org/gioia/station_information.json"},
+        {"name": "station_status", "url": "https://gbfs.example.org/gioia/station_status.json"}
+      ]
+    }
+  }
+}

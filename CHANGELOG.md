@@ -5,6 +5,11 @@ Il formato segue [Keep a Changelog](https://keepachangelog.com/it/1.1.0/) e il v
 ## [Non rilasciato]
 
 ### Aggiunto
+- **Bike sharing** nel backoffice: sistemi (gestore, link all'app per il noleggio, feed), stazioni sulla mappa
+  con le fermate del bus vicine, import da feed **GBFS** v2.x/v3.0 (URL o file JSON/zip) con anteprima delle
+  modifiche; le stazioni modificate a mano non vengono sovrascritte. Disponibilità di bici e stalli letta lato
+  server da `station_status` con cache sul `ttl`. API pubbliche `/api/v1/bikes/stations` e `/api/v1/bikes/nearby`,
+  `bikes_nearby` nella scheda della fermata, `bike_sharing` in `/info`.
 - **Backoffice** `/admin` per l'ufficio trasporti (React + Vite, Bootstrap Italia): fermate sulla mappa,
   linee con percorso, minuti e partenze, calendari ed eccezioni, agenzia e validità del feed, intestazione
   dell'app (logo, ente, titolo), impostazioni di mappa, ricerca e biglietti, registro delle modifiche.

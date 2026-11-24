@@ -11,6 +11,9 @@
   border: 2px solid #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, .45); }
 .pin-selected span { background: #a61d2a; width: 34px; height: 34px; font-size: 12px; }
 .pin-closed span { background: #5c6f82; text-decoration: line-through; }
+.pin-bike span { background: #008055; border-radius: 6px; }
+.pin-bike.pin-selected span { background: #a61d2a; }
+.pin-bike.pin-inactive span { background: #fff; color: #008055; border-color: #008055; border-style: dashed; }
 .pin-provisional span { background: #fff; color: #0066cc; border-color: #0066cc; border-style: dashed; }
 .badge-colore { display: inline-block; min-width: 2.2em; text-align: center; border-radius: 4px; padding: .15em .45em;
   font-weight: 700; }
